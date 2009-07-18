@@ -1,0 +1,46 @@
+<!--
+To change this template, choose Tools | Templates
+and open the template in the editor.
+-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+  <head>
+    <title></title>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+  </head>
+  <body>
+    <applet archive="launssh.jar,mindterm.signed.jar"
+            code="com.rightscale.ssh.LaunchpadApplet">
+       Java SSH launchpad.
+
+       <!-- Params that are only relevant to Launchpad -->
+       <param name="native" value="true" />
+       <param name="openssh-key-material" value="-----BEGIN RSA PRIVATE KEY-----*MIIEpQIBAAKCAQEAi0eXGWchTe+TicjS1qL60+kpH0cedYhMAlc9ggn0QylaPSWYwh2KOqEvs/iV*5ZoGqLd6RB53NXnvt2SCwgK0xksvvJdu4saH34CCiVB6D40TeAKKcBsFSEX3qVwqUUG5IWfVw9Vs*857lRM30bHzR11DHNRR1vxDDoOxDyczaSQfkqCwnBUDextftQayEnfUpRg/kKvhdSWOfIGITB7U3*WU6BHEn8+Cc58IRk0MeWo/vCZEuUvJnyQHWVjGEofl/f9MR9f0mGWxiGjD9i1tqmdanEvEKpo1S7*fc+Nzkmp/zp8OJ+PKDpT9ucFCC0jsArX7et/s8JprmBpMrjf1X7oGwIDAQABAoIBAD+RtU1K3NCN*gHFqz5BXYtRFnxc/ho9uXgLTfqdTk8DzptQxzL8MbILF/tfNpdzdqBxpYcylexNVTCwQG/4g7hFz*T55sH5gxtOI17V5u9McURMaJolX4fzi1dow+HLJppO2yTsbLKqcm5s24ks7RSZVUsRdw9yz1odRZ*AbehYB/kZdVHH5KKW/B3yMgQVYyb6yb3DIz+Ql87fsdPKe30jktZBSajVauiwcFNXtVAL3VnSaWY*mEzlINo7Gc4nJqdhNzuhA20yLMeBbxfs/sXtIXw8pfoHedo1Yn0XfPE7Sx4lbfoKcDZHfUZ27qTv*/UqgqujZkQDxhJjbc+7w0gztM8ECgYEAxYwFq8+qEwM9LF+I8SqhaiSJRmYE/YxvGZq2VxK7aeaX*lReCtJbNPhMdNH7JJIXI9bZkQFcoOSopveiKXRLI5/KiTSJwOgFsC93QYoahpgB5zgOm646oRqDt*3HD5CPoOd99k5IBRLZU0B/8RJE7Sboq2uRjXkm6ICPzLBFMxfV0CgYEAtH3hJpG60qe01DFHIYv2*fvPFTWwf0JgRxjMvYvlNXW+jraXPUzT7HDcaXfc25CMSAwAusNlQMXVdIUzgi1jmMpM2zkOa1sb2*krOrrLCF5VU6oDCESxwBlwHEyDn71Di5KWTddovF7V2fowlCC+MNXd87IJ5RszcUuSEkjfRgK9cC*gYEAoyj4UiStsxBcyTaK063DLfjJTNTcUFJaPMqUyawWEOy8zA5kDSX0lM2StJX3Kew5xAAGI0IZ*XcWePlU/Woo2V6UGOjE0giREijSFdar+/i2sbOSFTE9CWzt12jmQ5sIpiwZ+vV/iLITsOaKJFPTp*RxXYv15uRmp2fv3T7FmOKZ0CgYEAkbEOnhiCKmqPL707Qpv89AsH13AQ2kr2BfvpI0ZDqclk4NV3*3h1lGShtky3rVAnvDxcFmWFBNzsaWrf4hOLUpjxov+SYRwhBnreDOxkea7j5YrbnAs3vhpo54rnT*SkIjTIOLtJYsxWaOZochlgDIGF8KFlFVd4ldo/ZZ0HBTdO8CgYEArOk85APo+eQRcdC9fESv648Y*l6RAolvI+jcmaYZ4r7N2Q4ObiF0RwJWC9DOxjZkB+fFk4P1CvTGwvKybisjw2iqJ3wm20cKFWn/R*rMFI4DBl1q51hnTPkhHwak7DG3KF9GEMWfcbqK43L0vrt8YR7kOHH5ZKG4zt6Y0WU/02Lbk=*-----END RSA PRIVATE KEY-----*">
+
+       <!-- Params that are relevant to Launchpad and MindTerm -->
+       <param name='debug' value='false' />
+       <param name='server' value='ec2-75-101-181-69.compute-1.amazonaws.com' />
+       <param name="username" value="root">
+       <param name="private-key" value="aws-console.id.rsa.b67863cb7c52a7cbf6beaee2e2ea5028">
+
+       <!-- Params that are only relevant to MindTerm -->
+       <param name='sepframe' value='true' />
+       <param name="verbose" value="true">
+
+       <param name="auth-method" value="publickey">
+       <param name='protocol' value='ssh2' />
+       <param name='quiet' value='true'>
+       <param name='port' value='22' />
+       <param name='alive' value='60' />
+
+       <param name='80x132-enable' value='true' />
+       <param name='80x132-toggle' value='true' />
+       <param name='bg-color' value='black' />
+       <param name='fg-color' value='white' />
+       <param name='cursor-color' value='i_green' />
+       <param name="geometry" value="80x40">
+       <param name="font-name" value="Courier">
+       <param name="font-size" value="14">
+    </applet>
+  </body>
+</html>
