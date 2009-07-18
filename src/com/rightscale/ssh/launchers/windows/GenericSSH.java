@@ -24,5 +24,12 @@ public class GenericSSH extends SimpleWindowsLauncher {
       };
 
       debugExec(command);
+
+//      String[] command = {
+//            "cmd.exe",
+//            "/c",
+//            "start cmd"
+//        };
+//        debugExec(command);
     }
 }

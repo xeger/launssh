@@ -20,7 +20,21 @@ public class MacTerminal extends SimpleLauncher {
       File script = createScript();
       writeParams(username, hostname, identity);
 
-      getRuntime().exec( "open " + script.getCanonicalPath() );
+      String scr = script.getCanonicalPath();
+      
+      Process p       = null;
+      boolean success = false;
+
+// iTerm seems to have a bug: it won't actually open the files it's passed via "open"
+//      try {
+//          p = getRuntime().exec( "open -a iTerm " + scr );
+//          success = ( 0 == p.waitFor() );
+//      } catch(InterruptedException e) {
+//      }
+//
+      if(!success) {
+          p = getRuntime().exec( "open " + scr );
+      }
     }
 
     private void writeParams(String username, String hostname, File identity)
@@ -39,7 +53,6 @@ public class MacTerminal extends SimpleLauncher {
 
 
         FileUtils.writeText(params, scriptParams);
-        FileUtils.scheduleDelete(scriptParams, 15);
 
         getRuntime().exec("chmod 0600 " + scriptParams.getCanonicalPath());
     }
