@@ -1,5 +1,6 @@
 package com.rightscale.ssh;
 
+import com.rightscale.ssh.launchers.Launcher;
 import com.rightscale.ssh.*;
 import com.rightscale.ssh.launchers.*;
 import com.rightscale.ssh.launchers.java.*;
@@ -50,7 +51,7 @@ public class LaunchpadApplet
                 Constructor ctor = Class.forName(cn).getConstructor(paramTypes);
                 Launcher l = (Launcher) ctor.newInstance(params);
                 _launchers.add(l);
-                System.err.println(cn + " is compatible.");
+                System.err.println(cn + " is COMPATIBLE.");
             }
             catch(Exception e) {
                 Throwable t = e;
@@ -81,21 +82,31 @@ public class LaunchpadApplet
         }
 
         boolean didLaunch = false;
+        boolean didError = false;
 
-        if( getAttemptNative() ) {
+        try {
+            writePrivateKey();
+        }
+        catch(IOException e) {
+            reportError("Could not write your private key file.", e);
+            didError = true;
+        }
+
+        if( !didError && getAttemptNative() ) {
             try {
                 didLaunch = runNative();
             }
             catch(IOException e) {
                 didLaunch = false;
-                reportError("Error invoking your system's SSH client.", e);
+                reportError("Could not invoke your system's SSH client.", e);
+                didError = true;
             }
 
-            if(!didLaunch) {
+            if(!didLaunch && !didError) {
                 String err =
                     "Could not find your system's SSH client; make sure it is in your PATH.\n" +
                     "In the meantime, we will fall back on MindTerm.";
-                reportError(err, null);
+                reportInfo(err);
             }
         }
 
@@ -106,7 +117,7 @@ public class LaunchpadApplet
             }
             catch(IOException e) {
                 didLaunch = false;
-                reportError("Error invoking the MindTerm SSH applet.", e);
+                reportError("Could not invoke the MindTerm SSH applet.\nSorry, we can't connect you right now!", e);
             }
         }
     }
@@ -129,12 +140,16 @@ public class LaunchpadApplet
         Permission p2 = new FilePermission(shss, "write");
     }
 
-    protected boolean runMindterm()
+    protected void writePrivateKey()
             throws IOException
     {
         String matl = getKeyMaterial();
         File   key  = getKeyFile();
-        SimpleLauncher.writePrivateKey(matl, key, 60);
+        SimpleLauncher.writePrivateKey(matl, key, 300);
+    }
+    protected boolean runMindterm()
+            throws IOException
+    {
         _mindterm = new Mindterm(this, this, this);
         _mindterm.run( getUsername(), getServer(), getKeyFile() );
         return true;
@@ -143,17 +158,13 @@ public class LaunchpadApplet
     protected boolean runNative()
             throws IOException
     {
-        String matl = getKeyMaterial();
-        File   key  = getKeyFile();
-        SimpleLauncher.writePrivateKey(matl, key, 60);
-
         //Try all the launchers in sequence
         Iterator it = _launchers.iterator();
         while( it.hasNext() ) {
             Launcher l = (Launcher)it.next();
 
             try {
-                l.run( getUsername(), getServer(), key );
+                l.run( getUsername(), getServer(), getKeyFile() );
                 return true;
             }
             catch(IOException e) {
@@ -231,13 +242,15 @@ public class LaunchpadApplet
         return new File(dir);
     }
 
+    public void reportInfo(String message) {
+        report(JOptionPane.INFORMATION_MESSAGE, "SSH Launcher", message);
+    }
+
     public void reportError(String reason, Exception e) {
         if(e != null) {
             reason = reason + "\n" + e.getMessage();
         }
 
-        JOptionPane.showMessageDialog(null, reason, "SSH Error",
-                JOptionPane.ERROR_MESSAGE);
 
         if(e != null) {
             System.err.println(e.getMessage());
@@ -245,5 +258,11 @@ public class LaunchpadApplet
                 e.printStackTrace(System.err);
             }
         }
+
+        report(JOptionPane.ERROR_MESSAGE, "Error", reason);
+    }
+
+    public void report(int icon, String title, String message) {
+        JOptionPane.showMessageDialog(null, message, title, icon);
     }
 }

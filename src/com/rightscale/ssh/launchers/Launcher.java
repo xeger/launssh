@@ -1,4 +1,4 @@
-package com.rightscale.ssh;
+package com.rightscale.ssh.launchers;
 
 import java.io.*;
 

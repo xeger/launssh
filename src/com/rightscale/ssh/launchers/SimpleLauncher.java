@@ -64,14 +64,25 @@ public abstract class SimpleLauncher implements Launcher {
     static protected String defaults(String user, String host, File identity)
         throws IOException
     {
-        return defaults(user, host, identity, "-i");
+        if(isPlatform("Windows")) {
+            return defaults(user, host, identity, "/i");
+        }
+        else {
+            return defaults(user, host, identity, "-i");
+        }
     }
     
     static protected String defaults(String user, String host, File id, String sw)
         throws IOException
     {
         if(id != null) {
-            return sw + " \"" + id.getCanonicalPath() + "\" " + user + "@" + host;
+            /* Unices don't seem to like quotes around the file name */
+            if( isPlatform("Linux") || isPlatform("BSD") || isPlatform("nix") ) {
+                return sw + " " + id.getCanonicalPath() + " " + user + "@" + host;
+            }
+            else {
+                return sw + " \"" + id.getCanonicalPath() + "\" " + user + "@" + host;
+            }
         }
         else {
             return user + "@" + host;
