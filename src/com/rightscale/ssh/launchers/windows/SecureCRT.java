@@ -21,6 +21,10 @@ public class SecureCRT extends SimpleWindowsLauncher {
 //        }
     }
 
+    public String getFriendlyName() {
+        return "SecureCRT";
+    }
+
     public void run(String user, String host, File id) throws IOException {
         String command = _exe.getCanonicalPath() + " " +
                 defaults(user, host, id, "/I");

@@ -16,6 +16,22 @@ import java.io.*;
 public abstract class SimpleLauncher implements Launcher {
     static private Runtime _runtime;
 
+    /**
+     * Return the most common friendly name, since most launchers invoke OpenSSH
+     * @return "OpenSSH"
+     */
+    public String getFriendlyName() {
+        return "OpenSSH";
+    }
+
+    /**
+     * Return the most common key format for easier subclassing.
+     * @return OPENSSH_KEY_FORMAT, which is used by the majority of launchers
+     */
+    public int getRequiredKeyFormat() {
+        return OPENSSH_KEY_FORMAT;
+    }
+
     static public Runtime getRuntime()
     {
         if(_runtime == null) {
@@ -49,29 +65,6 @@ public abstract class SimpleLauncher implements Launcher {
         if( !isPlatform("Windows") ) {
             getRuntime().exec("chmod 0600 " + location.getCanonicalPath());
         }
-
-
-        //Doesn't work: MindTerm only writes ssh.com key files if they are
-        //DSA keys, and it doesn't write PuTTY at all!
-//        try {
-//            com.mindbright.ssh2.SSH2KeyPairFile kpf =
-//                    new com.mindbright.ssh2.SSH2KeyPairFile();
-//
-//            com.mindbright.jca.security.SecureRandom rand =
-//                    new com.mindbright.jca.security.SecureRandom();
-//            File loc2 = new File(location.getParentFile(), "foo.false");
-//            File loc3 = new File(location.getParentFile(), "foo.true");
-//
-//            kpf.load(location.getCanonicalPath(), "");
-//            kpf.store(loc2.getCanonicalPath(), rand, "", false);
-//            kpf.store(loc3.getCanonicalPath(), rand, "", true);
-//        }
-//        catch(Exception e) {
-//            System.err.println("OH NOES!");
-//            System.err.println(e.getMessage());
-//            e.printStackTrace(System.err);
-//        }
-
     }
 
     static protected boolean canInvoke(String command) {

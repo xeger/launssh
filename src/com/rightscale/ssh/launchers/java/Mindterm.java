@@ -30,6 +30,10 @@ public class Mindterm extends SimpleLauncher {
         _stub      = stub;
     }
 
+    public String getFriendlyName() {
+        return "MindTerm";
+    }
+
     public void run(String user, String host, File id) throws IOException {
         writeMindtermKey(id);
         launchMindterm();

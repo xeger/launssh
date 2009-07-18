@@ -12,6 +12,10 @@ public class GenericSSH extends SimpleWindowsLauncher {
         }
     }
 
+    public String getFriendlyName() {
+        return "Generic SSH";
+    }
+
     public void run(String user, String host, File id) throws IOException {
       String[] command = {
         "cmd.exe",

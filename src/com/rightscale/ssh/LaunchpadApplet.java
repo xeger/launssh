@@ -6,26 +6,31 @@ import com.rightscale.ssh.launchers.*;
 import com.rightscale.ssh.launchers.java.*;
 
 import java.lang.reflect.*;
+import java.awt.*;
+import java.awt.event.*;
+import javax.swing.*;
+import java.io.*;
+import java.util.*;
 import java.applet.Applet;
 import java.applet.AppletStub;
 import java.security.Permission;
-import java.awt.*;
-import javax.swing.*;
-import java.io.*;
-import java.util.ArrayList;
-import java.util.Iterator;
 
 public class LaunchpadApplet
         extends Applet
-        implements AppletStub, Launchpad
+        implements AppletStub, Launchpad, ActionListener
 {
-    private ArrayList _launchers = new ArrayList();
+    private ArrayList _launchers   = new ArrayList();
+    private Set       _requiredKeys= new HashSet();
+    private Map       _writtenKeys = new HashMap();
 
+    private int KEY_DELETION_TIMEOUT = 180;
+    
     private String[] LAUNCHERS = {
         "com.rightscale.ssh.launchers.osx.MacTerminal",
         "com.rightscale.ssh.launchers.unix.GnomeTerminal",
         "com.rightscale.ssh.launchers.unix.Konsole",
         "com.rightscale.ssh.launchers.unix.Xterm",
+        "com.rightscale.ssh.launchers.windows.PuTTY",
         "com.rightscale.ssh.launchers.windows.OpenSSH",
         "com.rightscale.ssh.launchers.windows.GenericSSH"
     };
@@ -51,8 +56,15 @@ public class LaunchpadApplet
             try {
                 Constructor ctor = Class.forName(cn).getConstructor(paramTypes);
                 Launcher l = (Launcher) ctor.newInstance(params);
-                _launchers.add(l);
-                System.err.println(cn + " is COMPATIBLE.");
+
+                if(haveKeyFormat(l.getRequiredKeyFormat())) {
+                    _launchers.add(l);
+                    _requiredKeys.add( new Integer(l.getRequiredKeyFormat()) );
+                    System.err.println(cn + " is COMPATIBLE.");
+                }
+                else {
+                    System.err.println(cn + " is UNAVAILABLE (missing required key format).");
+                }
             }
             catch(Exception e) {
                 Throwable t = e;
@@ -86,12 +98,18 @@ public class LaunchpadApplet
         boolean didError = false;
 
         try {
-            writePrivateKey();
+            writePrivateKeys();
         }
         catch(IOException e) {
             reportError("Could not write your private key file.", e);
             didError = true;
         }
+
+        if(getAutorun() == false) {
+            return;
+        }
+
+        System.err.println("Attempting autorun...");
 
         if( !didError && getAttemptNative() ) {
             try {
@@ -131,6 +149,20 @@ public class LaunchpadApplet
         }
     }
 
+    public void actionPerformed(ActionEvent e) {
+        try {
+            if(e.getActionCommand() == "launchMindterm") {
+                runMindterm();
+            }
+            else if(e.getActionCommand() == "launchNativeClient") {
+                runNative();
+            }
+        }
+        catch(IOException ex) {
+            //TODO: report error
+        }
+    }
+
     protected void elevatePrivilege() throws IOException {
         Permission p1 = new FilePermission("<<ALL FILES>>", "execute");
         System.getSecurityManager().checkPermission(p1);
@@ -141,12 +173,20 @@ public class LaunchpadApplet
         Permission p2 = new FilePermission(shss, "write");
     }
 
-    protected void writePrivateKey()
+    protected void writePrivateKeys()
             throws IOException
     {
-        String matl = getKeyMaterial();
-        File   key  = getKeyFile();
-        SimpleLauncher.writePrivateKey(matl, key, 300);
+        if(_requiredKeys.contains(new Integer(Launcher.OPENSSH_KEY_FORMAT))) {
+            String matl = getKeyMaterial();
+            File   key  = getKeyFile();
+            SimpleLauncher.writePrivateKey(matl, key, KEY_DELETION_TIMEOUT);
+
+        }
+        if(_requiredKeys.contains(new Integer(Launcher.PUTTY_KEY_FORMAT))) {
+            String matl = getPuttyKeyMaterial();
+            File   key  = getPuttyKeyFile();
+            SimpleLauncher.writePrivateKey(matl, key, KEY_DELETION_TIMEOUT);
+        }
     }
     protected boolean runMindterm()
             throws IOException
@@ -165,7 +205,19 @@ public class LaunchpadApplet
             Launcher l = (Launcher)it.next();
 
             try {
-                l.run( getUsername(), getServer(), getKeyFile() );
+                File keyFile = null;
+                switch(l.getRequiredKeyFormat() ) {
+                    case Launcher.OPENSSH_KEY_FORMAT:
+                        keyFile = getKeyFile();
+                        break;
+                    case Launcher.PUTTY_KEY_FORMAT:
+                        keyFile = getPuttyKeyFile();
+                        break;
+                    default:
+                        throw new Error("Unsupported key format; should not get here!!");
+                }
+
+                l.run( getUsername(), getServer(), keyFile );
                 return true;
             }
             catch(IOException e) {
@@ -176,10 +228,37 @@ public class LaunchpadApplet
         return false;
     }
 
+    protected boolean haveKeyFormat(int kf) {
+        switch(kf) {
+            case Launcher.OPENSSH_KEY_FORMAT:
+                return getKeyMaterial() != null;
+            case Launcher.PUTTY_KEY_FORMAT:
+                return getPuttyKeyMaterial() != null;
+            case Launcher.SSHCOM_KEY_FORMAT:
+            default:
+                return false; //TODO support OpenSSH keys
+        }
+    }
+
     protected boolean getDebug() {
         String v = getParameter("debug");
         if(v == null) {
             return false;
+        }
+
+        v = v.toLowerCase();
+        if(v.startsWith("y") || v.startsWith("t") || v.startsWith("1")) {
+            return true;
+        }
+        else {
+            return false;
+        }
+    }
+
+    protected boolean getAutorun() {
+        String v = getParameter("autorun");
+        if(v == null) {
+            return true;
         }
 
         v = v.toLowerCase();
@@ -230,11 +309,22 @@ public class LaunchpadApplet
 
     protected String getKeyMaterial() {
         String km = getParameter("openssh-key-material");
+        if(km == null) return null;
+        return km.replace('*', '\n');
+    }
+
+    protected String getPuttyKeyMaterial() {
+        String km = getParameter("putty-key-material");
+        if(km == null) return null;
         return km.replace('*', '\n');
     }
 
     protected File getKeyFile() {
         return new File(getSafeDirectory(), getKeyName());
+    }
+
+    protected File getPuttyKeyFile() {
+        return new File(getSafeDirectory(), getKeyName() + ".ppk");
     }
 
     public File getSafeDirectory() {

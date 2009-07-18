@@ -8,23 +8,31 @@ public class PuTTY extends SimpleWindowsLauncher {
     private File _exe = null;
     
     public PuTTY(Launchpad l) {
-        throw new RuntimeException("Disabled due to PuTTY's proprietary key format.");
 
-//        _exe = findExecutable("putty");
-//
-//        if(_exe == null) {
-//            _exe = findProgramFile("PuTTY", "putty");
-//        }
-//
-//        if( !isPlatform("Windows") || null == _exe ) {
-//            throw new RuntimeException("Wrong OS, or PuTTY not found in path.");
-//        }
+        _exe = findExecutable("putty");
+
+        if(_exe == null) {
+            _exe = findProgramFile("PuTTY", "putty");
+        }
+
+        if( !isPlatform("Windows") || null == _exe ) {
+            throw new RuntimeException("Wrong OS, or PuTTY not found in path.");
+        }
+    }
+
+    public String getFriendlyName() {
+        return "PuTTY";
+    }
+
+    public int getRequiredKeyFormat() {
+        return PUTTY_KEY_FORMAT;
     }
 
     public void run(String user, String host, File id) throws IOException {
         String command = _exe.getCanonicalPath() + " " +
-                defaults(user, host, id);
-        
+                defaults(user, host, id, "-i");
+
+        System.err.println(command);
         getRuntime().exec(command);
     }
 }
