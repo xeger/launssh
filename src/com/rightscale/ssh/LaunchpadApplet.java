@@ -92,6 +92,9 @@ public class LaunchpadApplet
     public void start() {
         try {
             //Acquire privs we need in order to run
+            //Mainly this is to ensure that the user is prompted, since we will
+            //need to elevate again later. (Elevation binds to a thread, so we
+            //must elevate close to the site where it's needed.)
             elevatePrivilege();
         }
         catch(IOException e) {
@@ -119,6 +122,13 @@ public class LaunchpadApplet
     public boolean autorun()
             throws IOException
     {
+        try {
+            elevatePrivilege();
+        }
+        catch(IOException e) {
+            reportError("Failed to acquire the necessary privilege for launching SSH.",e);
+        }
+
         System.err.println("Attempting autorun...");
 
         boolean didLaunch = false;
@@ -160,6 +170,13 @@ public class LaunchpadApplet
             throws IOException
     {
         try {
+            elevatePrivilege();
+        }
+        catch(IOException e) {
+            reportError("Failed to acquire the necessary privilege for launching SSH.",e);
+        }
+
+        try {
             writePrivateKeys();
         }
         catch(IOException e) {
@@ -175,6 +192,13 @@ public class LaunchpadApplet
     public boolean runNative()
             throws IOException
     {
+        try {
+            elevatePrivilege();
+        }
+        catch(IOException e) {
+            reportError("Failed to acquire the necessary privilege for launching SSH.",e);
+        }
+
         try {
             writePrivateKeys();
         }
@@ -216,6 +240,10 @@ public class LaunchpadApplet
         }
 
         return false;
+    }
+
+    public boolean isNativeClientAvailable() {
+        return (_toTry.size() > 0);
     }
 
     public String getNextNativeClient() {
