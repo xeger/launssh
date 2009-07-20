@@ -6,6 +6,7 @@
 package com.rightscale.util;
 
 import java.io.*;
+import java.util.*;
 
 /**
  *
@@ -40,19 +41,41 @@ public class FileUtils {
         bw.close();
     }
 
-    public static void scheduleDelete(File f, int timeout) {
+    public static void scheduleDelete(File f, int timeout)
+            throws IOException
+    {
         new FileDeleter(f, timeout);
     }
 }
 
 class FileDeleter implements Runnable {
-    File _file  = null;
-    int  _delay = 0;
+    public static Map _deleters = new HashMap();
 
-    public FileDeleter(File file, int delay) {
+    Thread    _thread = null;
+    File      _file   = null;
+    int       _delay  = 0;
+    boolean   _abort  = false;
+
+    public FileDeleter(File file, int delay)
+        throws IOException
+    {
+        String cp = file.getCanonicalPath();
+
+        synchronized(_deleters) {
+            FileDeleter fd = (FileDeleter)_deleters.get(cp);
+            if(fd != null) {
+                fd.abort();
+            }
+        }
+
         _file = file;
         _delay = delay;
-        new Thread(this).start();
+        _thread = new Thread(this);
+        _thread.start();
+
+        synchronized(_deleters) {
+            _deleters.put(cp, this);
+        }
     }
 
     public void run() {
@@ -61,7 +84,14 @@ class FileDeleter implements Runnable {
         }
         catch (InterruptedException e) {}
 
-        _file.delete();
-        System.err.println("Deleted " + _file.getName());
+        if(!_abort) {
+            _file.delete();
+            System.err.println("Deleted " + _file.getName());
+        }
+    }
+
+    protected void abort() {
+        _abort = true;
+        _thread.interrupt();
     }
 }

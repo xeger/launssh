@@ -17,9 +17,10 @@ import java.security.Permission;
 
 public class LaunchpadApplet
         extends Applet
-        implements AppletStub, Launchpad, ActionListener
+        implements AppletStub, Launchpad
 {
     private ArrayList _launchers   = new ArrayList();
+    private ArrayList _toTry       = new ArrayList();
     private Set       _requiredKeys= new HashSet();
     private Map       _writtenKeys = new HashMap();
 
@@ -78,6 +79,9 @@ public class LaunchpadApplet
             }
         }
 
+        //Remember which native launchers to try
+        _toTry.addAll(_launchers);
+
         //Prepare to hold another applet
         setBackground(Color.white);
     }
@@ -94,22 +98,31 @@ public class LaunchpadApplet
             reportError("Failed to acquire the necessary privilege for launching SSH.",e);
         }
 
-        boolean didLaunch = false;
-        boolean didError = false;
-
         try {
-            writePrivateKeys();
+            if( getAutorun() ) {
+                autorun();
+            }
         }
         catch(IOException e) {
-            reportError("Could not write your private key file.", e);
-            didError = true;
+            reportError("Could not automatically launch the SSH client.", e);
         }
+    }
 
-        if(getAutorun() == false) {
-            return;
+    public void stop() {
+        if(_mindterm != null) {
+            _mindterm.stop();
+            _mindterm = null;
+
         }
+    }
 
+    public boolean autorun()
+            throws IOException
+    {
         System.err.println("Attempting autorun...");
+
+        boolean didLaunch = false;
+        boolean didError = false;
 
         if( !didError && getAttemptNative() ) {
             try {
@@ -139,68 +152,44 @@ public class LaunchpadApplet
                 reportError("Could not invoke the MindTerm SSH applet.\nSorry, we can't connect you right now!", e);
             }
         }
+
+        return didLaunch;
     }
 
-    public void stop() {
-        if(_mindterm != null) {
-            _mindterm.stop();
-            _mindterm = null;
-
-        }
-    }
-
-    public void actionPerformed(ActionEvent e) {
+    public boolean runMindterm()
+            throws IOException
+    {
         try {
-            if(e.getActionCommand() == "launchMindterm") {
-                runMindterm();
-            }
-            else if(e.getActionCommand() == "launchNativeClient") {
-                runNative();
-            }
+            writePrivateKeys();
         }
-        catch(IOException ex) {
-            //TODO: report error
+        catch(IOException e) {
+            reportError("Could not write your private key file.", e);
+            return false;
         }
-    }
 
-    protected void elevatePrivilege() throws IOException {
-        Permission p1 = new FilePermission("<<ALL FILES>>", "execute");
-        System.getSecurityManager().checkPermission(p1);
-
-        File home = new File(System.getProperty("user.home"));
-        File hss = new File(home, "-");
-        String shss = hss.getCanonicalPath();
-        Permission p2 = new FilePermission(shss, "write");
-    }
-
-    protected void writePrivateKeys()
-            throws IOException
-    {
-        if(_requiredKeys.contains(new Integer(Launcher.OPENSSH_KEY_FORMAT))) {
-            String matl = getKeyMaterial();
-            File   key  = getKeyFile();
-            SimpleLauncher.writePrivateKey(matl, key, KEY_DELETION_TIMEOUT);
-
-        }
-        if(_requiredKeys.contains(new Integer(Launcher.PUTTY_KEY_FORMAT))) {
-            String matl = getPuttyKeyMaterial();
-            File   key  = getPuttyKeyFile();
-            SimpleLauncher.writePrivateKey(matl, key, KEY_DELETION_TIMEOUT);
-        }
-    }
-    protected boolean runMindterm()
-            throws IOException
-    {
         _mindterm = new Mindterm(this, this, this);
         _mindterm.run( getUsername(), getServer(), getKeyFile() );
         return true;
     }
     
-    protected boolean runNative()
+    public boolean runNative()
             throws IOException
     {
+        try {
+            writePrivateKeys();
+        }
+        catch(IOException e) {
+            reportError("Could not write your private key file.", e);
+            return false;
+        }
+
+        //Reset list of native clients to try
+        if(_toTry.size() == 0) {
+            _toTry.addAll(_launchers);
+        }
+
         //Try all the launchers in sequence
-        Iterator it = _launchers.iterator();
+        Iterator it = _toTry.iterator();
         while( it.hasNext() ) {
             Launcher l = (Launcher)it.next();
 
@@ -221,11 +210,31 @@ public class LaunchpadApplet
                 return true;
             }
             catch(IOException e) {
+                _toTry.remove(l);
                 System.err.println(e.toString());
             }
         }
 
         return false;
+    }
+
+    public String getNextNativeClient() {
+        if(_toTry.size() > 0) {
+            return ((Launcher)_toTry.get(0)).getFriendlyName();
+        }
+        else {
+            return "MindTerm";
+        }
+    }
+
+     protected void elevatePrivilege() throws IOException {
+        Permission p1 = new FilePermission("<<ALL FILES>>", "execute");
+        System.getSecurityManager().checkPermission(p1);
+
+        File home = new File(System.getProperty("user.home"));
+        File hss = new File(home, "-");
+        String shss = hss.getCanonicalPath();
+        Permission p2 = new FilePermission(shss, "write");
     }
 
     protected boolean haveKeyFormat(int kf) {
@@ -237,6 +246,22 @@ public class LaunchpadApplet
             case Launcher.SSHCOM_KEY_FORMAT:
             default:
                 return false; //TODO support OpenSSH keys
+        }
+    }
+
+    protected void writePrivateKeys()
+            throws IOException
+    {
+        if(_requiredKeys.contains(new Integer(Launcher.OPENSSH_KEY_FORMAT))) {
+            String matl = getKeyMaterial();
+            File   key  = getKeyFile();
+            SimpleLauncher.writePrivateKey(matl, key, KEY_DELETION_TIMEOUT);
+
+        }
+        if(_requiredKeys.contains(new Integer(Launcher.PUTTY_KEY_FORMAT))) {
+            String matl = getPuttyKeyMaterial();
+            File   key  = getPuttyKeyFile();
+            SimpleLauncher.writePrivateKey(matl, key, KEY_DELETION_TIMEOUT);
         }
     }
 
