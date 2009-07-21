@@ -19,7 +19,6 @@ public class LaunchpadApplet
         extends Applet
         implements AppletStub, Launchpad
 {
-    private AccessControlContext _acc         = null;
     private ArrayList            _launchers   = new ArrayList();
     private ArrayList            _toTry       = new ArrayList();
     private Set                  _requiredKeys= new HashSet();
@@ -83,6 +82,9 @@ public class LaunchpadApplet
         //Remember which native launchers to try
         _toTry.addAll(_launchers);
 
+        //OpenSSH format is always required (for PuTTY)
+        _requiredKeys.add(new Integer(Launcher.OPENSSH_KEY_FORMAT));
+
         //Prepare to hold another applet
         setBackground(Color.white);
     }
@@ -91,14 +93,6 @@ public class LaunchpadApplet
      * Called every time the browser requests a new instance of the applet.
      */
     public void start() {
-        try {
-            _acc = AccessController.getContext();
-        }
-        catch(Exception e) {
-            reportError("Failed to acquire the necessary privilege for launching SSH.",e);
-        }
-
-
         try {
             if( getAutorun() ) {
                 autorun();
@@ -403,12 +397,12 @@ public class LaunchpadApplet
 
     public void reportError(String reason, Exception e) {
         if(e != null) {
-            reason = reason + "\n" + e.getMessage();
+            reason = reason + "\n" + e.toString();
         }
 
 
         if(e != null) {
-            System.err.println(e.getMessage());
+            System.err.println(e.toString());
             if( getDebug() ) {
                 e.printStackTrace(System.err);
             }
