@@ -13,16 +13,17 @@ import java.io.*;
 import java.util.*;
 import java.applet.Applet;
 import java.applet.AppletStub;
-import java.security.Permission;
+import java.security.*;
 
 public class LaunchpadApplet
         extends Applet
         implements AppletStub, Launchpad
 {
-    private ArrayList _launchers   = new ArrayList();
-    private ArrayList _toTry       = new ArrayList();
-    private Set       _requiredKeys= new HashSet();
-    private Map       _writtenKeys = new HashMap();
+    private AccessControlContext _acc         = null;
+    private ArrayList            _launchers   = new ArrayList();
+    private ArrayList            _toTry       = new ArrayList();
+    private Set                  _requiredKeys= new HashSet();
+    private Map                  _writtenKeys = new HashMap();
 
     private int KEY_DELETION_TIMEOUT = 180;
     
@@ -91,15 +92,12 @@ public class LaunchpadApplet
      */
     public void start() {
         try {
-            //Acquire privs we need in order to run
-            //Mainly this is to ensure that the user is prompted, since we will
-            //need to elevate again later. (Elevation binds to a thread, so we
-            //must elevate close to the site where it's needed.)
-            elevatePrivilege();
+            _acc = AccessController.getContext();
         }
-        catch(IOException e) {
+        catch(Exception e) {
             reportError("Failed to acquire the necessary privilege for launching SSH.",e);
         }
+
 
         try {
             if( getAutorun() ) {
@@ -122,13 +120,6 @@ public class LaunchpadApplet
     public boolean autorun()
             throws IOException
     {
-        try {
-            elevatePrivilege();
-        }
-        catch(IOException e) {
-            reportError("Failed to acquire the necessary privilege for launching SSH.",e);
-        }
-
         System.err.println("Attempting autorun...");
 
         boolean didLaunch = false;
@@ -170,12 +161,56 @@ public class LaunchpadApplet
             throws IOException
     {
         try {
-            elevatePrivilege();
-        }
-        catch(IOException e) {
-            reportError("Failed to acquire the necessary privilege for launching SSH.",e);
-        }
+            Boolean b = (Boolean)
+                AccessController.doPrivileged(new PrivilegedExceptionAction() {
+                    public Object run() throws IOException {
+                        return new Boolean(reallyRunMindterm());
+                    }
+                });
 
+            return b.booleanValue();
+        }
+        catch(PrivilegedActionException e) {
+            reportError("Failed to acquire the privilege necessary to launch SSH.",e);
+            return false;
+        }
+    }
+
+    public boolean runNative()
+            throws IOException
+    {
+        try {
+            Boolean b = (Boolean)
+                AccessController.doPrivileged(new PrivilegedExceptionAction() {
+                    public Object run() throws IOException {
+                        return new Boolean(reallyRunNative());
+                    }
+                });
+
+            return b.booleanValue();
+        }
+        catch(PrivilegedActionException e) {
+            reportError("Failed to acquire the privilege necessary to launch SSH.",e);
+            return false;
+        }
+    }
+
+    public boolean isNativeClientAvailable() {
+        return (_toTry.size() > 0);
+    }
+
+    public String getNextNativeClient() {
+        if(_toTry.size() > 0) {
+            return ((Launcher)_toTry.get(0)).getFriendlyName();
+        }
+        else {
+            return "MindTerm";
+        }
+    }
+
+    private boolean reallyRunMindterm()
+            throws IOException
+    {
         try {
             writePrivateKeys();
         }
@@ -188,17 +223,10 @@ public class LaunchpadApplet
         _mindterm.run( getUsername(), getServer(), getKeyFile() );
         return true;
     }
-    
-    public boolean runNative()
+
+    private boolean reallyRunNative()
             throws IOException
     {
-        try {
-            elevatePrivilege();
-        }
-        catch(IOException e) {
-            reportError("Failed to acquire the necessary privilege for launching SSH.",e);
-        }
-
         try {
             writePrivateKeys();
         }
@@ -240,29 +268,6 @@ public class LaunchpadApplet
         }
 
         return false;
-    }
-
-    public boolean isNativeClientAvailable() {
-        return (_toTry.size() > 0);
-    }
-
-    public String getNextNativeClient() {
-        if(_toTry.size() > 0) {
-            return ((Launcher)_toTry.get(0)).getFriendlyName();
-        }
-        else {
-            return "MindTerm";
-        }
-    }
-
-     protected void elevatePrivilege() throws IOException {
-        Permission p1 = new FilePermission("<<ALL FILES>>", "execute");
-        System.getSecurityManager().checkPermission(p1);
-
-        File home = new File(System.getProperty("user.home"));
-        File hss = new File(home, "-");
-        String shss = hss.getCanonicalPath();
-        Permission p2 = new FilePermission(shss, "write");
     }
 
     protected boolean haveKeyFormat(int kf) {
@@ -361,15 +366,17 @@ public class LaunchpadApplet
     }
 
     protected String getKeyMaterial() {
+        String newline = System.getProperty("line.separator");
         String km = getParameter("openssh-key-material");
         if(km == null) return null;
-        return km.replace('*', '\n');
+        return km.replaceAll("\\*", newline);
     }
 
     protected String getPuttyKeyMaterial() {
+        String newline = System.getProperty("line.separator");
         String km = getParameter("putty-key-material");
         if(km == null) return null;
-        return km.replace('*', '\n');
+        return km.replaceAll("\\*", newline);
     }
 
     protected File getKeyFile() {
@@ -379,6 +386,10 @@ public class LaunchpadApplet
     protected File getPuttyKeyFile() {
         return new File(getSafeDirectory(), getKeyName() + ".ppk");
     }
+
+    ////
+    //// SSHLaunchpad implementation
+    ////
 
     public File getSafeDirectory() {
         String dir = System.getProperty("user.home");

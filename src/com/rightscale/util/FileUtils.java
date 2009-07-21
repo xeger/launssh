@@ -16,6 +16,8 @@ public class FileUtils {
     public static String readText(File location)
             throws IOException
     {
+        String newline = System.getProperty("line.separator");
+        
         FileInputStream fis = new FileInputStream(location);
         BufferedReader  br = new BufferedReader(new InputStreamReader(fis));
 
@@ -26,6 +28,7 @@ public class FileUtils {
             line = br.readLine();
             if(line != null) {
                 contents.append(line);
+                contents.append(newline);
             }
         } while(line != null);
 
