@@ -19,10 +19,12 @@ public class GenericSSH extends SimpleWindowsLauncher {
 
     public void run(String user, String host, File id) throws IOException {
       File exe = findExecutable("ssh");
-      String msg = "It looks like '" + exe.getName() + "' may be an SSH client.\nIt lives in '" + exe.getParentFile() + "'.\nDo you want to invoke it?";
+      String msg = exe.getCanonicalPath() + "\n" +
+                   "It looks like this file may be an SSH client.\n" +
+                   "Do you want me to invoke it?";
       String title = "Security Warning";
       int shouldRun =
-        JOptionPane.showConfirmDialog(null, "msg", "title", JOptionPane.YES_NO_OPTION);
+        JOptionPane.showConfirmDialog(null, msg, title, JOptionPane.YES_NO_OPTION);
 
       if(JOptionPane.YES_OPTION == shouldRun) {
           String[] command = {

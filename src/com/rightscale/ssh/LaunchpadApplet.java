@@ -32,6 +32,7 @@ public class LaunchpadApplet
         "com.rightscale.ssh.launchers.unix.Konsole",
         "com.rightscale.ssh.launchers.unix.Xterm",
         "com.rightscale.ssh.launchers.windows.PuTTY",
+        "com.rightscale.ssh.launchers.windows.SecureCRT",
         "com.rightscale.ssh.launchers.windows.OpenSSH",
         "com.rightscale.ssh.launchers.windows.GenericSSH"
     };
