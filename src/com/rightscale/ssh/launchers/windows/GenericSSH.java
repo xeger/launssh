@@ -37,7 +37,7 @@ public class GenericSSH extends SimpleWindowsLauncher {
             user + "@" + host
           };
 
-          debugExec(command);
+          getRuntime().exec(command);
       }
     }
 }

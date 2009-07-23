@@ -33,7 +33,7 @@ public class MacTerminal extends SimpleLauncher {
 //      }
 //
       if(!success) {
-          p = getRuntime().exec( "open " + scr );
+          p = getRuntime().exec( "open -a Terminal " + scr );
       }
     }
 
