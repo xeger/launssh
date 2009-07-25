@@ -6,7 +6,7 @@ include WEBrick
 
 basedir = File.expand_path( File.dirname(__FILE__) )
 
-cmd = "jarsigner #{basedir}/dist/launssh.jar rightscalejava_2009"
+cmd = "jarsigner -tsa 'http://tsa.starfieldtech.com' #{basedir}/dist/launssh.jar rightscalejava_2009"
 system(cmd) || (raise "Could not sign JAR")
 
 cmd = "cp #{basedir}/dist/launssh.jar #{basedir}/integration/launssh.jar"
