@@ -19,6 +19,7 @@ public class LaunchpadApplet
         extends Applet
         implements AppletStub, Launchpad
 {
+    private boolean              _initialized = false;
     private ArrayList            _launchers   = new ArrayList();
     private ArrayList            _toTry       = new ArrayList();
     private Set                  _requiredKeys= new HashSet();
@@ -48,6 +49,8 @@ public class LaunchpadApplet
      * into the browser.
      */
     public void init() {
+        _initialized = false;
+        
         Class[]  paramTypes = {Launchpad.class};
         Object[] params     = {this};
 
@@ -88,6 +91,9 @@ public class LaunchpadApplet
 
         //Prepare to hold another applet
         setBackground(Color.white);
+
+        //Remember we're initialized (for callers)
+        _initialized = true;
     }
 
     /**
@@ -190,11 +196,15 @@ public class LaunchpadApplet
         }
     }
 
+    public boolean isInitialized() {
+        return _initialized;
+    }
+
     public boolean isNativeClientAvailable() {
         return (_toTry.size() > 0);
     }
 
-    public String getNextNativeClient() {
+    public String getNativeClientName() {
         if(_toTry.size() > 0) {
             return ((Launcher)_toTry.get(0)).getFriendlyName();
         }
