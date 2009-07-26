@@ -11,7 +11,7 @@ on run argv
 	try
 		tell application "Finder"
 			if exists application file id "ITRM" then
-				my open_iterm_tab("RightScale SSH", cmd)
+				my open_iterm_tab("RightScale SSH", "ssh " & cmd)
 			end if
 		end tell
 	on error
@@ -20,7 +20,7 @@ on run argv
 	-- As a fallthrough, open the SSH session with Mac Terminal
 	--If this fails, don't bother catching the error; the user's system is probably borked anyway
 	if had_error then
-		my open_terminal_tab("RightScale SSH", cmd)
+		my open_terminal_tab("RightScale SSH", "ssh " & cmd)
 	end if
 end run
 
