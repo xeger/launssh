@@ -24,7 +24,7 @@ public class MacTerminal extends SimpleLauncher {
       cmdbuf.append(" ");
       if(identity != null) {
         cmdbuf.append("-i ");
-        cmdbuf.append(scr);
+        cmdbuf.append(identity);
         cmdbuf.append(" ");
       }
       cmdbuf.append(hostname);
