@@ -118,9 +118,9 @@ public class LaunchpadApplet
         System.err.println("Attempting autorun...");
 
         boolean didLaunch = false;
-        boolean didError = false;
+        boolean didError  = false;
 
-        if( !didError && getAttemptNative() ) {
+        if( getAttemptNative() ) {
             try {
                 didLaunch = runNative();
             }
@@ -240,6 +240,8 @@ public class LaunchpadApplet
         while( it.hasNext() ) {
             Launcher l = (Launcher)it.next();
 
+            System.err.println("  Running " + l.getClass().getName());
+            
             try {
                 File keyFile = null;
                 switch(l.getRequiredKeyFormat() ) {

@@ -17,7 +17,9 @@ public class MacTerminal extends SimpleLauncher {
     }
 
     public void run(String username, String hostname, File identity) throws IOException {
-      File script = createScript();
+      File script  = createScript();
+      File wrapper = createWrapperScript();
+      
       String scr  = script.getCanonicalPath();      
       StringBuffer cmdbuf = new StringBuffer();
 
@@ -45,7 +47,7 @@ public class MacTerminal extends SimpleLauncher {
         FileOutputStream fos = new FileOutputStream(script);
         BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(fos));
 
-        InputStream in = getClass().getResourceAsStream("/RightScale_SSH_Launcher.scpt");
+        InputStream in = getClass().getResourceAsStream("/RightScale_SSH_Launcher");
         BufferedReader br = new BufferedReader(new InputStreamReader(in));
 
         String crlf = System.getProperty("line.separator");
@@ -62,6 +64,47 @@ public class MacTerminal extends SimpleLauncher {
         bw.close();
         
         getRuntime().exec("chmod 0700 " + script.getCanonicalPath());
+
+
+        //HACK - sleep for a bit so the JVM picks up the file's change of perms
+        try {
+            Thread.sleep(250);
+        }
+        catch(InterruptedException e) {}
+
+        return script;
+    }
+
+    private File createWrapperScript() throws IOException {
+        File dir = _launchpad.getSafeDirectory();
+
+        File script = new File(dir, "RightScale_SSH_Wrapper");
+
+        if(script.exists()) {
+            script.delete();
+        }
+
+        FileOutputStream fos = new FileOutputStream(script);
+        BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(fos));
+
+        InputStream in = getClass().getResourceAsStream("/RightScale_SSH_Wrapper");
+        BufferedReader br = new BufferedReader(new InputStreamReader(in));
+
+        String crlf = System.getProperty("line.separator");
+        String line = null;
+
+        do {
+            line = br.readLine();
+            if(line != null) {
+                bw.write(line); bw.write(crlf);
+            }
+        } while(line != null);
+
+        br.close();
+        bw.close();
+
+        getRuntime().exec("chmod 0700 " + script.getCanonicalPath());
+
 
         //HACK - sleep for a bit so the JVM picks up the file's change of perms
         try {

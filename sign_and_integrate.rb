@@ -12,6 +12,9 @@ system(cmd) || (raise "Could not sign JAR")
 cmd = "cp #{basedir}/dist/launssh.jar #{basedir}/integration/launssh.jar"
 system(cmd) || (raise "Could not copy JAR to integration testbed")
 
+cmd = "cp integration/launssh.jar ~/Projects/right_site/public/ssh/launssh.jar"
+system(cmd) || (raise "Could not copy JAR to right_site")
+
 puts "Starting up HTTP server on port 3000 to serve applet; ^C to quit..."
 
 s = HTTPServer.new(
