@@ -1,6 +1,5 @@
 #!/bin/bash
 
-echo $@ > ~/test.txt
 ssh $@ && exit
 
 read -p 'Press enter to continue...'
