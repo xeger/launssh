@@ -22,17 +22,9 @@ public class MacTerminal extends SimpleLauncher {
       
       String scr  = script.getCanonicalPath();      
       StringBuffer cmdbuf = new StringBuffer();
+      String cmdline = defaults(username, hostname, identity);
 
-      cmdbuf.append(" ");
-      if(identity != null) {
-        cmdbuf.append("-i ");
-        cmdbuf.append(identity);
-        cmdbuf.append(" ");
-      }
-      cmdbuf.append(hostname);
-      String cmdline = cmdbuf.toString();
-
-      getRuntime().exec( scr + cmdline );
+      getRuntime().exec( scr + " " + cmdline );
     }
 
     private File createScript() throws IOException {

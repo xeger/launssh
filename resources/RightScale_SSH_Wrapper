@@ -1,8 +1,8 @@
 #!/bin/bash
 
+echo $@ > ~/test.txt
 ssh $@ && exit
 
-echo ''
 read -p 'Press enter to continue...'
 clear
 exit
