@@ -21,7 +21,6 @@ public class LaunchpadApplet
 {
     private boolean              _initialized = false;
     private ArrayList            _launchers   = new ArrayList();
-    private ArrayList            _toTry       = new ArrayList();
     private Set                  _requiredKeys= new HashSet();
     private Map                  _writtenKeys = new HashMap();
 
@@ -49,51 +48,16 @@ public class LaunchpadApplet
      * into the browser.
      */
     public void init() {
-        _initialized = false;
-        
-        Class[]  paramTypes = {Launchpad.class};
-        Object[] params     = {this};
-
-        //Initialize platform-native launchers
-        for(int i = 0; i < LAUNCHERS.length; i++) {
-            String cn = LAUNCHERS[i];
-            
-            try {
-                Constructor ctor = Class.forName(cn).getConstructor(paramTypes);
-                Launcher l = (Launcher) ctor.newInstance(params);
-
-                if(haveKeyFormat(l.getRequiredKeyFormat())) {
-                    _launchers.add(l);
-                    _requiredKeys.add( new Integer(l.getRequiredKeyFormat()) );
-                    System.err.println(cn + " is COMPATIBLE.");
+        try {
+            AccessController.doPrivileged(new PrivilegedExceptionAction() {
+                public Object run() throws IOException {
+                    return null;
                 }
-                else {
-                    System.err.println(cn + " is UNAVAILABLE (missing required key format).");
-                }
-            }
-            catch(Exception e) {
-                Throwable t = e;
-                while(t.getCause() != null)
-                    t = t.getCause();
-                
-                System.err.println(cn + " is NOT compatible: " + t);
-                if(getDebug()) {
-                    e.printStackTrace(System.err);
-                }
-            }
+            });
         }
-
-        //Remember which native launchers to try
-        _toTry.addAll(_launchers);
-
-        //OpenSSH format is always required (for PuTTY)
-        _requiredKeys.add(new Integer(Launcher.OPENSSH_KEY_FORMAT));
-
-        //Prepare to hold another applet
-        setBackground(Color.white);
-
-        //Remember we're initialized (for callers)
-        _initialized = true;
+        catch(PrivilegedActionException e) {
+            reportError("Failed to acquire the privilege necessary to initialize the applet.", e);
+        }
     }
 
     /**
@@ -101,12 +65,16 @@ public class LaunchpadApplet
      */
     public void start() {
         try {
-            if( getAutorun() ) {
-                autorun();
-            }
+            AccessController.doPrivileged(new PrivilegedExceptionAction() {
+                public Object run() throws IOException {
+                    reallyInit();
+                    reallyStart();
+                    return null;
+                }
+            });
         }
-        catch(IOException e) {
-            reportError("Could not automatically launch the SSH client.", e);
+        catch(PrivilegedActionException e) {
+            reportError("Failed to acquire the privilege necessary to initialize the applet.", e);
         }
     }
 
@@ -201,18 +169,76 @@ public class LaunchpadApplet
     }
 
     public boolean isNativeClientAvailable() {
-        return (_toTry.size() > 0);
+        return (_launchers.size() > 0);
     }
 
     public String getNativeClientName() {
-        if(_toTry.size() > 0) {
-            return ((Launcher)_toTry.get(0)).getFriendlyName();
+        if(_launchers.size() > 0) {
+            return ((Launcher)_launchers.get(0)).getFriendlyName();
         }
         else {
             return "MindTerm";
         }
     }
 
+    private void reallyInit()
+    {
+        _initialized = false;
+
+        Class[]  paramTypes = {Launchpad.class};
+        Object[] params     = {this};
+
+        //Initialize platform-native launchers
+        for(int i = 0; i < LAUNCHERS.length; i++) {
+            String cn = LAUNCHERS[i];
+
+            try {
+                Constructor ctor = Class.forName(cn).getConstructor(paramTypes);
+                Launcher l = (Launcher) ctor.newInstance(params);
+
+                if(haveKeyFormat(l.getRequiredKeyFormat())) {
+                    _launchers.add(l);
+                    _requiredKeys.add( new Integer(l.getRequiredKeyFormat()) );
+                    System.err.println(cn + " is COMPATIBLE.");
+                }
+                else {
+                    System.err.println(cn + " is UNAVAILABLE (missing required key format).");
+                }
+            }
+            catch(Exception e) {
+                Throwable t = e;
+                while(t.getCause() != null)
+                    t = t.getCause();
+
+                System.err.println(cn + " is NOT compatible: " + t);
+                if(getDebug()) {
+                    e.printStackTrace(System.err);
+                }
+            }
+        }
+
+        //OpenSSH format is always required (for PuTTY)
+        _requiredKeys.add(new Integer(Launcher.OPENSSH_KEY_FORMAT));
+
+        //Prepare to hold another applet
+        setBackground(Color.white);
+
+        //Remember we're initialized (for callers)
+        _initialized = true;
+    }
+
+    private void reallyStart()
+    {
+        try {
+            if( getAutorun() ) {
+                autorun();
+            }
+        }
+        catch(IOException e) {
+            reportError("Could not automatically launch the SSH client.", e);
+        }
+    }
+    
     private boolean reallyRunMindterm()
             throws IOException
     {
@@ -240,13 +266,8 @@ public class LaunchpadApplet
             return false;
         }
 
-        //Reset list of native clients to try
-        if(_toTry.size() == 0) {
-            _toTry.addAll(_launchers);
-        }
-
         //Try all the launchers in sequence
-        Iterator it = _toTry.iterator();
+        Iterator it = _launchers.iterator();
         while( it.hasNext() ) {
             Launcher l = (Launcher)it.next();
 
@@ -269,7 +290,7 @@ public class LaunchpadApplet
                 return true;
             }
             catch(IOException e) {
-                _toTry.remove(l);
+                System.err.println("Failed to launch using " + l.getFriendlyName() + ":");
                 System.err.println(e.toString());
             }
         }
