@@ -27,7 +27,7 @@ public class LaunchpadApplet
     private int KEY_DELETION_TIMEOUT = 180;
     
     private String[] LAUNCHERS = {
-        "com.rightscale.ssh.launchers.osx.MacTerminal",
+        "com.rightscale.ssh.launchers.osx.Applescript",
         "com.rightscale.ssh.launchers.unix.GnomeTerminal",
         "com.rightscale.ssh.launchers.unix.Konsole",
         "com.rightscale.ssh.launchers.unix.Xterm",

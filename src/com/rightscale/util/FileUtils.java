@@ -44,6 +44,29 @@ public class FileUtils {
         bw.close();
     }
 
+    public static void writeResource(Class klass, String resName, File location)
+            throws IOException
+    {
+        FileOutputStream fos = new FileOutputStream(location);
+        BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(fos));
+
+        InputStream in = klass.getResourceAsStream(resName);
+        BufferedReader br = new BufferedReader(new InputStreamReader(in));
+
+        String crlf = System.getProperty("line.separator");
+        String line = null;
+
+        do {
+            line = br.readLine();
+            if(line != null) {
+                bw.write(line); bw.write(crlf);
+            }
+        } while(line != null);
+
+        br.close();
+        bw.close();
+    }
+    
     public static void scheduleDelete(File f, int timeout)
             throws IOException
     {

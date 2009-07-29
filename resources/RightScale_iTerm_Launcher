@@ -1,0 +1,19 @@
+#!/usr/bin/osascript
+
+on run argv
+    set AppleScript's text item delimiters to " "
+    set cmd to (argv as text)
+
+    tell application "iTerm"
+		activate
+
+		set term to (get current terminal)
+		tell term
+			set sess to (make new session)
+			tell sess
+				set name to "RightScale SSH"
+				exec command "~/.rightscale/RightScale_SSH_Wrapper " & cmd
+			end tell
+		end tell
+	end tell
+end run
