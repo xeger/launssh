@@ -17,28 +17,11 @@ import java.security.*;
 
 public class LaunchpadApplet
         extends Applet
-        implements AppletStub, Launchpad
+        implements AppletStub
 {
     private boolean              _initialized = false;
-    private ArrayList            _launchers   = new ArrayList();
-    private Set                  _requiredKeys= new HashSet();
-    private Map                  _writtenKeys = new HashMap();
+    private RightScaleLaunchpad  _launchpad   = new RightScaleLaunchpad();
 
-    private int KEY_DELETION_TIMEOUT = 180;
-    
-    private String[] LAUNCHERS = {
-        "com.rightscale.ssh.launchers.osx.Applescript",
-        "com.rightscale.ssh.launchers.unix.GnomeTerminal",
-        "com.rightscale.ssh.launchers.unix.Konsole",
-        "com.rightscale.ssh.launchers.unix.Xterm",
-        "com.rightscale.ssh.launchers.windows.PuTTY",
-        //"com.rightscale.ssh.launchers.windows.SecureCRT",
-        "com.rightscale.ssh.launchers.windows.OpenSSH",
-        "com.rightscale.ssh.launchers.windows.GenericSSH"
-    };
-
-    private Mindterm _mindterm = null;
-    
     public void appletResize( int width, int height ){
         resize( width, height );
     }
@@ -51,254 +34,38 @@ public class LaunchpadApplet
         try {
             AccessController.doPrivileged(new PrivilegedExceptionAction() {
                 public Object run() throws IOException {
+                    init_();
                     return null;
                 }
             });
         }
         catch(PrivilegedActionException e) {
-            reportError("Failed to acquire the privilege necessary to initialize the applet.", e);
+            _launchpad.reportError("Failed to acquire the privilege necessary to initialize the applet.", e);
         }
     }
 
     /**
-     * Called every time the browser requests a new instance of the applet.
+     * Called every time the browser requests a new "instance" of the applet.
      */
     public void start() {
         try {
             AccessController.doPrivileged(new PrivilegedExceptionAction() {
                 public Object run() throws IOException {
-                    reallyInit();
-                    reallyStart();
+                    start_();
                     return null;
                 }
             });
         }
         catch(PrivilegedActionException e) {
-            reportError("Failed to acquire the privilege necessary to initialize the applet.", e);
+            _launchpad.reportError("Failed to acquire the privilege necessary to initialize the applet.", e);
         }
     }
 
     public void stop() {
-        if(_mindterm != null) {
-            _mindterm.stop();
-            _mindterm = null;
-
-        }
+        // TODO delegate to RightScaleLauncher's _mindterm
     }
 
-    public boolean autorun()
-            throws IOException
-    {
-        System.err.println("Attempting autorun...");
-
-        boolean didLaunch = false;
-        boolean didError  = false;
-
-        if( getAttemptNative() ) {
-            try {
-                didLaunch = runNative();
-            }
-            catch(IOException e) {
-                didLaunch = false;
-                reportError("Could not invoke your system's SSH client.", e);
-                didError = true;
-            }
-
-            if(!didLaunch && !didError) {
-                String err =
-                    "Could not find your system's SSH client; make sure it is in your PATH.\n" +
-                    "In the meantime, we will fall back on MindTerm.";
-                reportInfo(err);
-            }
-        }
-
-        if(!didLaunch) {
-            try {
-                runMindterm();
-                didLaunch = true;
-            }
-            catch(IOException e) {
-                didLaunch = false;
-                reportError("Could not invoke the MindTerm SSH applet.\nSorry, we can't connect you right now!", e);
-            }
-        }
-
-        return didLaunch;
-    }
-
-    public boolean runMindterm()
-            throws IOException
-    {
-        try {
-            Boolean b = (Boolean)
-                AccessController.doPrivileged(new PrivilegedExceptionAction() {
-                    public Object run() throws IOException {
-                        return new Boolean(reallyRunMindterm());
-                    }
-                });
-
-            return b.booleanValue();
-        }
-        catch(PrivilegedActionException e) {
-            reportError("Failed to acquire the privilege necessary to launch SSH.",e);
-            return false;
-        }
-    }
-
-    public boolean runNative()
-            throws IOException
-    {
-        try {
-            Boolean b = (Boolean)
-                AccessController.doPrivileged(new PrivilegedExceptionAction() {
-                    public Object run() throws IOException {
-                        return new Boolean(reallyRunNative());
-                    }
-                });
-
-            return b.booleanValue();
-        }
-        catch(PrivilegedActionException e) {
-            reportError("Failed to acquire the privilege necessary to launch SSH.",e);
-            return false;
-        }
-    }
-
-    public boolean isInitialized() {
-        return _initialized;
-    }
-
-    public boolean isNativeClientAvailable() {
-        return (_launchers.size() > 0);
-    }
-
-    public String getNativeClientName() {
-        if(_launchers.size() > 0) {
-            return ((Launcher)_launchers.get(0)).getFriendlyName();
-        }
-        else {
-            return "MindTerm";
-        }
-    }
-
-    private void reallyInit()
-    {
-        _initialized = false;
-
-        Class[]  paramTypes = {Launchpad.class};
-        Object[] params     = {this};
-
-        //Initialize platform-native launchers
-        for(int i = 0; i < LAUNCHERS.length; i++) {
-            String cn = LAUNCHERS[i];
-
-            try {
-                Constructor ctor = Class.forName(cn).getConstructor(paramTypes);
-                Launcher l = (Launcher) ctor.newInstance(params);
-
-                if(haveKeyFormat(l.getRequiredKeyFormat())) {
-                    _launchers.add(l);
-                    _requiredKeys.add( new Integer(l.getRequiredKeyFormat()) );
-                    System.err.println(cn + " is COMPATIBLE.");
-                }
-                else {
-                    System.err.println(cn + " is UNAVAILABLE (missing required key format).");
-                }
-            }
-            catch(Exception e) {
-                Throwable t = e;
-                while(t.getCause() != null)
-                    t = t.getCause();
-
-                System.err.println(cn + " is NOT compatible: " + t);
-                if(getDebug()) {
-                    e.printStackTrace(System.err);
-                }
-            }
-        }
-
-        //OpenSSH format is always required (for PuTTY)
-        _requiredKeys.add(new Integer(Launcher.OPENSSH_KEY_FORMAT));
-
-        //Prepare to hold another applet
-        setBackground(Color.white);
-
-        //Remember we're initialized (for callers)
-        _initialized = true;
-    }
-
-    private void reallyStart()
-    {
-        try {
-            if( getAutorun() ) {
-                autorun();
-            }
-        }
-        catch(IOException e) {
-            reportError("Could not automatically launch the SSH client.", e);
-        }
-    }
-    
-    private boolean reallyRunMindterm()
-            throws IOException
-    {
-        try {
-            writePrivateKeys();
-        }
-        catch(IOException e) {
-            reportError("Could not write your private key file.", e);
-            return false;
-        }
-
-        _mindterm = new Mindterm(this, this, this);
-        _mindterm.run( getUsername(), getServer(), getKeyFile() );
-        return true;
-    }
-
-    private boolean reallyRunNative()
-            throws IOException
-    {
-        try {
-            writePrivateKeys();
-        }
-        catch(IOException e) {
-            reportError("Could not write your private key file.", e);
-            return false;
-        }
-
-        //Try all the launchers in sequence
-        Iterator it = _launchers.iterator();
-        while( it.hasNext() ) {
-            Launcher l = (Launcher)it.next();
-
-            System.err.println("  Running " + l.getClass().getName());
-            
-            try {
-                File keyFile = null;
-                switch(l.getRequiredKeyFormat() ) {
-                    case Launcher.OPENSSH_KEY_FORMAT:
-                        keyFile = getKeyFile();
-                        break;
-                    case Launcher.PUTTY_KEY_FORMAT:
-                        keyFile = getPuttyKeyFile();
-                        break;
-                    default:
-                        throw new Error("Unsupported key format; should not get here!!");
-                }
-
-                l.run( getUsername(), getServer(), keyFile );
-                return true;
-            }
-            catch(IOException e) {
-                System.err.println("Failed to launch using " + l.getFriendlyName() + ":");
-                System.err.println(e.toString());
-            }
-        }
-
-        return false;
-    }
-
-    protected boolean haveKeyFormat(int kf) {
+    protected boolean hasKeyFormat(int kf) {
         switch(kf) {
             case Launcher.OPENSSH_KEY_FORMAT:
                 return getKeyMaterial() != null;
@@ -306,42 +73,11 @@ public class LaunchpadApplet
                 return getPuttyKeyMaterial() != null;
             case Launcher.SSHCOM_KEY_FORMAT:
             default:
-                return false; //TODO support OpenSSH keys
+                return false; //TODO support SSH.com keys
         }
     }
 
-    protected void writePrivateKeys()
-            throws IOException
-    {
-        if(_requiredKeys.contains(new Integer(Launcher.OPENSSH_KEY_FORMAT))) {
-            String matl = getKeyMaterial();
-            File   key  = getKeyFile();
-            SimpleLauncher.writePrivateKey(matl, key, KEY_DELETION_TIMEOUT);
-
-        }
-        if(_requiredKeys.contains(new Integer(Launcher.PUTTY_KEY_FORMAT))) {
-            String matl = getPuttyKeyMaterial();
-            File   key  = getPuttyKeyFile();
-            SimpleLauncher.writePrivateKey(matl, key, KEY_DELETION_TIMEOUT);
-        }
-    }
-
-    protected boolean getDebug() {
-        String v = getParameter("debug");
-        if(v == null) {
-            return false;
-        }
-
-        v = v.toLowerCase();
-        if(v.startsWith("y") || v.startsWith("t") || v.startsWith("1")) {
-            return true;
-        }
-        else {
-            return false;
-        }
-    }
-
-    protected boolean getAutorun() {
+    protected boolean isAutorun() {
         String v = getParameter("autorun");
         if(v == null) {
             return true;
@@ -356,7 +92,7 @@ public class LaunchpadApplet
         }
     }
 
-    protected boolean getAttemptNative() {
+    protected boolean isAttemptNative() {
         String v = getParameter("native");
         if(v == null) {
             return false;
@@ -408,44 +144,92 @@ public class LaunchpadApplet
     }
 
     protected File getKeyFile() {
-        return new File(getSafeDirectory(), getKeyName());
+        return new File(_launchpad.getSafeDirectory(), getKeyName());
     }
 
     protected File getPuttyKeyFile() {
-        return new File(getSafeDirectory(), getKeyName() + ".ppk");
+        return new File(_launchpad.getSafeDirectory(), getKeyName() + ".ppk");
     }
 
     ////
-    //// SSHLaunchpad implementation
+    //// Internal applet implementation; requires privilege
     ////
 
-    public File getSafeDirectory() {
-        String dir = System.getProperty("user.home");
-        dir = dir + "/.rightscale";
-        return new File(dir);
-    }
+    private void init_()
+    {
+        Map keyMaterial = new HashMap();
 
-    public void reportInfo(String message) {
-        report(JOptionPane.INFORMATION_MESSAGE, "SSH Launcher", message);
-    }
-
-    public void reportError(String reason, Exception e) {
-        if(e != null) {
-            reason = reason + "\n" + e.toString();
+        if( getKeyMaterial() != null ) {
+            keyMaterial.put( new Integer(Launcher.OPENSSH_KEY_FORMAT), getKeyMaterial() );
         }
 
+        if( getPuttyKeyMaterial() != null ) {
+            keyMaterial.put( new Integer(Launcher.PUTTY_KEY_FORMAT), getPuttyKeyMaterial() );
+        }
 
-        if(e != null) {
-            System.err.println(e.toString());
-            if( getDebug() ) {
-                e.printStackTrace(System.err);
+        //Initialize the launchpad business logic
+        _launchpad.setUsername(getUsername());
+        _launchpad.setServer(getServer());
+        _launchpad.setKeyName(getKeyName());
+        _launchpad.setKeyMaterial(keyMaterial);
+        _launchpad.init();
+
+        //Prepare to hold another applet
+        setBackground(Color.white);
+
+        //Remember we've been initialized
+        _initialized = true;
+    }
+
+    private void start_()
+    {
+        try {
+            if( isAutorun() ) {
+                autorun_();
+            }
+        }
+        catch(IOException e) {
+            _launchpad.reportError("Could not automatically launch the SSH client.", e);
+        }
+    }
+
+    private boolean autorun_()
+            throws IOException
+    {
+        System.err.println("Attempting autorun...");
+
+        boolean didLaunch = false;
+        boolean didError  = false;
+
+        if( isAttemptNative() ) {
+            try {
+                didLaunch = _launchpad.runNative();
+            }
+            catch(IOException e) {
+                didLaunch = false;
+                _launchpad.reportError("Could not invoke your system's SSH client.", e);
+                didError = true;
+            }
+
+            if(!didLaunch && !didError) {
+                String err =
+                    "Could not find your system's SSH client; make sure it is in your PATH.\n" +
+                    "In the meantime, we will fall back on MindTerm.";
+                _launchpad.reportInfo(err);
             }
         }
 
-        report(JOptionPane.ERROR_MESSAGE, "Error", reason);
-    }
+        if(!didLaunch) {
+            try {
+                _launchpad.runMindterm(this, this);
+                didLaunch = true;
+            }
+            catch(IOException e) {
+                didLaunch = false;
+                _launchpad.reportError("Could not invoke the MindTerm SSH applet.\nSorry, we can't connect you right now!", e);
+            }
+        }
 
-    public void report(int icon, String title, String message) {
-        JOptionPane.showMessageDialog(null, message, title, icon);
+        return didLaunch;
     }
 }

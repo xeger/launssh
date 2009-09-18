@@ -12,6 +12,7 @@ import  java.io.*;
  * @author tony
  */
 public interface Launchpad {
+    public void init();
     public File getSafeDirectory() throws IOException;
     public void reportError(String message, Exception e);
 }
