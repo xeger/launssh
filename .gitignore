@@ -1,6 +1,8 @@
 .DS_Store
 manifest.mf
 nbbuild.xml
+master-applet.jnlp
+preview-applet.html
 nbproject/*
 dist/*
 cert/*
