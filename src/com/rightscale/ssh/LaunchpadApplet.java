@@ -27,11 +27,33 @@ public class LaunchpadApplet
     public static final String USING_NATIVE    = "usingNative";
 
     private RightScaleLaunchpad  _launchpad   = new RightScaleLaunchpad();
+    private boolean              _ranNative   = false;
+    private boolean              _ranMindterm = false;
+    
+    ////
+    //// Methods that allow the page's JS to query our state
+    ////
+
+    public boolean ranNative() {
+        return _ranNative;
+    }
+
+    public boolean ranMindterm() {
+        return _ranMindterm;
+    }
+    
+    ////
+    //// AppletStub implementation
+    ////
 
     public void appletResize( int width, int height ){
         resize( width, height );
     }
     
+    ////
+    //// Applet implementation
+    ////
+
     /**
      * Initialization method that will be called after the applet is loaded
      * into the browser.
@@ -68,7 +90,6 @@ public class LaunchpadApplet
     }
 
     public void stop() {
-        // TODO delegate to RightScaleLauncher's _mindterm
     }
 
     ////
@@ -212,7 +233,7 @@ public class LaunchpadApplet
         if( isAttemptNative() ) {
             try {
                 setDisplayState(USING_NATIVE);
-                didLaunch = _launchpad.runNative();
+                _ranNative = didLaunch = _launchpad.runNative();
             }
             catch(IOException e) {
                 didLaunch = false;
@@ -231,8 +252,8 @@ public class LaunchpadApplet
             else {
                 setDisplayState(USING_MINDTERM);
             }
-            _launchpad.runMindterm(this, this);
-            didLaunch = true;
+
+            _ranMindterm = didLaunch = _launchpad.runMindterm(this, this);
         }
         catch(IOException e) {
             didLaunch = false;
@@ -250,7 +271,7 @@ public class LaunchpadApplet
         }
         else {
             setDisplayState(FORCED_MINDTERM);
-            _launchpad.runMindterm(this, this);
+            _ranMindterm = _launchpad.runMindterm(this, this);
         }
     }
 
@@ -259,33 +280,13 @@ public class LaunchpadApplet
     ////
 
     boolean        _initialized = false;
-    CountdownTimer _timer       = null;
     JPanel         _pnlMain     = null;
-    JLabel         _lblWarning  = null;
-
-    Action _actCloseWindow = new AbstractAction("Close Window") {
-        public void actionPerformed(ActionEvent evt) {
-            try {
-             URL url = new URL("javascript:window.close()");
-             getAppletContext().showDocument(url);
-            }
-            catch(Throwable t) {
-                System.err.println("Could not invoke JSObject API to close browser window.");
-                t.printStackTrace(System.err);
-            }
-        }
-    };
 
     Action _actRunNative = new AbstractAction("Use Native") {
         public void actionPerformed(ActionEvent evt) {
             try {
-                _launchpad.runNative();
+                _ranNative = _launchpad.runNative();
                 setDisplayState(USING_NATIVE);
-
-                if(_timer == null) {
-                    _timer = new CountdownTimer(15, _lblWarning, _actCloseWindow);
-                    _timer.start();
-                }
             }
             catch(IOException e) {
                 _launchpad.reportError("Could not invoke your computer's SSH application.", e);
@@ -296,12 +297,8 @@ public class LaunchpadApplet
     Action _actRunMindterm = new AbstractAction("Use Mindterm") {
         public void actionPerformed(ActionEvent evt) {
             try {
-                _launchpad.runMindterm(LaunchpadApplet.this, LaunchpadApplet.this);
+                _ranMindterm = _launchpad.runMindterm(LaunchpadApplet.this, LaunchpadApplet.this);
                 setDisplayState(USING_MINDTERM);
-
-                if(_timer != null) {
-                    _timer.cancel();
-                }
             }
             catch(IOException e) {
                 _launchpad.reportError("Could not invoke MindTerm.", e);
