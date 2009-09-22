@@ -2,6 +2,7 @@ package com.rightscale.ssh;
 
 import com.rightscale.ssh.launchers.Launcher;
 import com.rightscale.ssh.*;
+import com.rightscale.util.*;
 import com.rightscale.ssh.launchers.*;
 import com.rightscale.ssh.launchers.java.*;
 
@@ -9,6 +10,7 @@ import java.lang.reflect.*;
 import java.awt.*;
 import java.awt.event.*;
 import javax.swing.*;
+import java.net.*;
 import java.io.*;
 import java.util.*;
 import java.applet.Applet;
@@ -19,7 +21,11 @@ public class LaunchpadApplet
         extends Applet
         implements AppletStub
 {
-    private boolean              _initialized = false;
+    public static final String CHOOSING        = "choosing";
+    public static final String USING_MINDTERM  = "usingMindterm";
+    public static final String FORCED_MINDTERM = "forcedMindterm";
+    public static final String USING_NATIVE    = "usingNative";
+
     private RightScaleLaunchpad  _launchpad   = new RightScaleLaunchpad();
 
     public void appletResize( int width, int height ){
@@ -65,17 +71,9 @@ public class LaunchpadApplet
         // TODO delegate to RightScaleLauncher's _mindterm
     }
 
-    protected boolean hasKeyFormat(int kf) {
-        switch(kf) {
-            case Launcher.OPENSSH_KEY_FORMAT:
-                return getKeyMaterial() != null;
-            case Launcher.PUTTY_KEY_FORMAT:
-                return getPuttyKeyMaterial() != null;
-            case Launcher.SSHCOM_KEY_FORMAT:
-            default:
-                return false; //TODO support SSH.com keys
-        }
-    }
+    ////
+    //// Properties and accessors.
+    ////
 
     protected boolean isAutorun() {
         String v = getParameter("autorun");
@@ -151,8 +149,10 @@ public class LaunchpadApplet
         return new File(_launchpad.getSafeDirectory(), getKeyName() + ".ppk");
     }
 
+
     ////
-    //// Internal applet implementation; requires privilege
+    //// "Internal" Applet implementation and related methods; all require the
+    //// caller to have already elevated privilege.
     ////
 
     private void init_()
@@ -174,10 +174,16 @@ public class LaunchpadApplet
         _launchpad.setKeyMaterial(keyMaterial);
         _launchpad.init();
 
-        //Prepare to hold another applet
-        setBackground(Color.white);
+        //Fix up the "use native client" button's text for friendlier UI
+        if(_launchpad.isNativeClientAvailable()) {
+            _actRunNative.putValue(_actRunNative.NAME, "Use " + _launchpad.getNativeClientName());
+        }
 
-        //Remember we've been initialized
+        //Initialize the UI (only if we haven't already done it)
+        if(!_initialized) {
+            initUI();
+        }
+
         _initialized = true;
     }
 
@@ -187,9 +193,12 @@ public class LaunchpadApplet
             if( isAutorun() ) {
                 autorun_();
             }
+            else {
+                choose_();
+            }
         }
         catch(IOException e) {
-            _launchpad.reportError("Could not automatically launch the SSH client.", e);
+            _launchpad.reportError("Encountered an error while invoking the SSH client.", e);
         }
     }
 
@@ -199,37 +208,255 @@ public class LaunchpadApplet
         System.err.println("Attempting autorun...");
 
         boolean didLaunch = false;
-        boolean didError  = false;
 
         if( isAttemptNative() ) {
             try {
+                setDisplayState(USING_NATIVE);
                 didLaunch = _launchpad.runNative();
             }
             catch(IOException e) {
                 didLaunch = false;
                 _launchpad.reportError("Could not invoke your system's SSH client.", e);
-                didError = true;
-            }
-
-            if(!didLaunch && !didError) {
-                String err =
-                    "Could not find your system's SSH client; make sure it is in your PATH.\n" +
-                    "In the meantime, we will fall back on MindTerm.";
-                _launchpad.reportInfo(err);
             }
         }
 
-        if(!didLaunch) {
-            try {
-                _launchpad.runMindterm(this, this);
-                didLaunch = true;
+        if(didLaunch) {
+            return true;
+        }
+
+        try {
+            if( isAttemptNative() ) {
+                setDisplayState(FORCED_MINDTERM);
             }
-            catch(IOException e) {
-                didLaunch = false;
-                _launchpad.reportError("Could not invoke the MindTerm SSH applet.\nSorry, we can't connect you right now!", e);
+            else {
+                setDisplayState(USING_MINDTERM);
             }
+            _launchpad.runMindterm(this, this);
+            didLaunch = true;
+        }
+        catch(IOException e) {
+            didLaunch = false;
+            _launchpad.reportError("Could not invoke the MindTerm SSH applet.\nSorry, we can't connect you right now!", e);
         }
 
         return didLaunch;
+    }
+
+    private void choose_()
+            throws IOException
+    {
+        if( _launchpad.isNativeClientAvailable() ) {
+            setDisplayState(CHOOSING);
+        }
+        else {
+            setDisplayState(FORCED_MINDTERM);
+            _launchpad.runMindterm(this, this);
+        }
+    }
+
+    ////
+    //// UI fields and functions.
+    ////
+
+    boolean        _initialized = false;
+    CountdownTimer _timer       = null;
+    JPanel         _pnlMain     = null;
+    JLabel         _lblWarning  = null;
+
+    Action _actCloseWindow = new AbstractAction("Close Window") {
+        public void actionPerformed(ActionEvent evt) {
+            try {
+             URL url = new URL("javascript:window.close()");
+             getAppletContext().showDocument(url);
+            }
+            catch(Throwable t) {
+                System.err.println("Could not invoke JSObject API to close browser window.");
+                t.printStackTrace(System.err);
+            }
+        }
+    };
+
+    Action _actRunNative = new AbstractAction("Use Native") {
+        public void actionPerformed(ActionEvent evt) {
+            try {
+                _launchpad.runNative();
+                setDisplayState(USING_NATIVE);
+
+                if(_timer == null) {
+                    _timer = new CountdownTimer(15, _lblWarning, _actCloseWindow);
+                    _timer.start();
+                }
+            }
+            catch(IOException e) {
+                _launchpad.reportError("Could not invoke your computer's SSH application.", e);
+            }
+        }
+    };
+
+    Action _actRunMindterm = new AbstractAction("Use Mindterm") {
+        public void actionPerformed(ActionEvent evt) {
+            try {
+                _launchpad.runMindterm(LaunchpadApplet.this, LaunchpadApplet.this);
+                setDisplayState(USING_MINDTERM);
+
+                if(_timer != null) {
+                    _timer.cancel();
+                }
+            }
+            catch(IOException e) {
+                _launchpad.reportError("Could not invoke MindTerm.", e);
+            }
+        }
+    };
+
+    private void setDisplayState(String newState) {
+        if(_initialized) {
+            CardLayout layout = (CardLayout)_pnlMain.getLayout();
+            layout.show(_pnlMain, newState);
+        }
+    }
+
+    private void initUI() {
+        //A header that is shared between all display states
+        Container header           = createHeaderUI();
+
+        //One panel for each display state the applet can be in
+        Container pnlChoosing       = createChoosingUI(),
+                  pnlUsingNative    = createUsingNativeUI(),
+                  pnlUsingMindterm  = createUsingMindtermUI(),
+                  pnlForcedMindterm = createForcedMindtermUI();
+
+        //Add all of the initialized panels to the main (CardLayout) panel
+        _pnlMain = new JPanel();
+        _pnlMain.setLayout(new CardLayout());
+        _pnlMain.add(pnlChoosing, CHOOSING);
+        _pnlMain.add(pnlUsingNative, USING_NATIVE);
+        _pnlMain.add(pnlUsingMindterm, USING_MINDTERM);
+        _pnlMain.add(pnlForcedMindterm, FORCED_MINDTERM);
+
+        //Add the main and header panels to ourself
+        this.setBackground(Color.white);
+        this.setLayout(new BorderLayout());
+        this.add(header, BorderLayout.NORTH);
+        this.add(_pnlMain, BorderLayout.CENTER);
+    }
+
+    private Container createHeaderUI() {
+        Box pnl = Box.createVerticalBox();
+        JLabel lbl = new JLabel( "Connecting to" );
+        lbl.setAlignmentX(JComponent.CENTER_ALIGNMENT);
+        pnl.add(lbl);
+        lbl = new JLabel( getServer() );
+        lbl.setAlignmentX(JComponent.CENTER_ALIGNMENT);
+        pnl.add(lbl);
+        pnl.add(Box.createRigidArea(new Dimension(1, 16)));
+        return pnl;
+    }
+
+    private Container createChoosingUI() {
+        JPanel pnl = new JPanel();
+        Box pnlCenter = Box.createVerticalBox();
+        Box pnlButtons = Box.createHorizontalBox();
+        JLabel lbl = new JLabel( "How do you want to connect?" );
+        lbl.setFont(lbl.getFont().deriveFont(Font.BOLD));
+        lbl.setAlignmentX(JComponent.CENTER_ALIGNMENT);
+        pnlCenter.add(lbl);
+        pnlButtons.add(new JButton(_actRunNative));
+        pnlButtons.add(new JButton(_actRunMindterm));
+        pnlCenter.add(pnlButtons);
+        pnl.setLayout(new BorderLayout());
+        pnl.add(pnlCenter, BorderLayout.CENTER);
+
+        return pnl;
+    }
+
+    private Container createUsingNativeUI() {
+        JPanel pnl = new JPanel();
+        Box pnlCenter = Box.createVerticalBox();
+        Box pnlButtons = Box.createHorizontalBox();
+        JLabel lbl = new JLabel( _launchpad.getNativeClientName() + " will launch in a separate window." );
+        lbl.setAlignmentX(JComponent.CENTER_ALIGNMENT);
+        pnlCenter.add(lbl);
+        lbl = new JLabel( "If you encounter problems, use MindTerm instead." );
+        lbl.setAlignmentX(JComponent.CENTER_ALIGNMENT);
+        pnlCenter.add(lbl);
+        pnlCenter.add(Box.createRigidArea(new Dimension(1, 16)));
+        pnlButtons.add(new JButton(_actRunMindterm));
+        pnlCenter.add(pnlButtons);
+        pnl.setLayout(new BorderLayout());
+        pnl.add(pnlCenter, BorderLayout.CENTER);
+        return pnl;
+    }
+
+    private Container createUsingMindtermUI() {
+        JPanel pnl = new JPanel();
+        Box pnlCenter = Box.createVerticalBox();
+        JLabel lbl = new JLabel( "Using MindTerm pure-Java SSH client.");
+        lbl.setAlignmentX(JComponent.CENTER_ALIGNMENT);
+        pnlCenter.add(lbl);
+        lbl = new JLabel( "Session will display in a separate window.");
+        lbl.setAlignmentX(JComponent.CENTER_ALIGNMENT);
+        pnlCenter.add(lbl);
+        pnlCenter.add(Box.createRigidArea(new Dimension(1, 16)));
+        lbl = new JLabel( "This window must stay open while using SSH.");
+        lbl.setFont(lbl.getFont().deriveFont(Font.BOLD));
+        lbl.setForeground(Color.RED);
+        lbl.setAlignmentX(JComponent.CENTER_ALIGNMENT);
+        pnlCenter.add(lbl);
+        pnl.setLayout(new BorderLayout());
+        pnl.add(pnlCenter, BorderLayout.CENTER);
+        return pnl;
+    }
+
+    private Container createForcedMindtermUI() {
+        JPanel pnl = new JPanel();
+        Box pnlCenter = Box.createVerticalBox();
+        JLabel lbl = new JLabel( "Your system does not appear to contain a compatible SSH client.");
+        lbl.setAlignmentX(JComponent.CENTER_ALIGNMENT);
+        pnlCenter.add(lbl);
+        lbl = new JLabel( "Using MindTerm instead.");
+        lbl.setAlignmentX(JComponent.CENTER_ALIGNMENT);
+        pnlCenter.add(lbl);
+        lbl = new JLabel( "Session will display in a separate window.");
+        lbl.setAlignmentX(JComponent.CENTER_ALIGNMENT);
+        pnlCenter.add(lbl);
+        pnlCenter.add(Box.createRigidArea(new Dimension(1, 16)));
+        lbl = new JLabel( "This window must stay open while using SSH.");
+        lbl.setFont(lbl.getFont().deriveFont(Font.BOLD));
+        lbl.setForeground(Color.RED);
+        lbl.setAlignmentX(JComponent.CENTER_ALIGNMENT);
+        pnlCenter.add(lbl);
+        pnl.setLayout(new BorderLayout());
+        pnl.add(pnlCenter, BorderLayout.CENTER);
+        return pnl;
+    }
+
+    ////
+    //// Overridden superclass methods used to keep MindTerm from trashing
+    //// our components and layout.
+    ////
+
+    @Override
+    public void setLayout(LayoutManager layout) {
+        if(!_initialized) {
+            super.setLayout(layout);
+        }
+    }
+
+    @Override
+    public Component add(Component comp) {
+        if(!_initialized) {
+            return super.add(comp);
+        }
+        else {
+            return comp;
+        }
+    }
+
+    @Override
+    public void add(Component comp, Object constraints) {
+        if(!_initialized) {
+            super.add(comp, constraints);
+        }
     }
 }
