@@ -6,12 +6,11 @@ import com.rightscale.util.*;
 import java.io.*;
 
 public class Applescript extends SimpleLauncher {
-    private Launchpad _launchpad = null;
     private File      _terminalScript = null;
     private File      _itermScript    = null;
 
     public Applescript(Launchpad l) {
-        _launchpad = l;
+        super(l);
         
         if( !isPlatform("Mac") ) {
             throw new RuntimeException("Wrong OS");
@@ -70,7 +69,7 @@ public class Applescript extends SimpleLauncher {
 
         //HACK - sleep for a bit so the JVM picks up the files' change of perms
         try {
-            Thread.sleep(100);
+            Thread.sleep(250);
         } catch(InterruptedException e) {}
 
         _terminalScript = terminal;

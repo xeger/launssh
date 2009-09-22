@@ -16,6 +16,12 @@ import java.io.*;
 public abstract class SimpleLauncher implements Launcher {
     static private Runtime _runtime;
 
+    protected Launchpad _launchpad = null;
+    
+    public SimpleLauncher(Launchpad launchpad) {
+        _launchpad = launchpad;
+    }
+
     /**
      * Return the most common friendly name, since most launchers invoke OpenSSH
      * @return "OpenSSH"

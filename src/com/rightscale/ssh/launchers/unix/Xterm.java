@@ -4,17 +4,12 @@ import com.rightscale.ssh.*;
 import com.rightscale.ssh.launchers.*;
 import java.io.*;
 
-public class Xterm extends SimpleLauncher {
-    public Xterm(Launchpad l) {
-        if( !canInvoke("xterm -h") ) {
-            throw new RuntimeException("'xterm' command not found.");
+public class Xterm extends SimpleUnixLauncher {
+    public Xterm(Launchpad launchpad) {
+        super(launchpad, "xterm -h", "xterm -e");
+
+        if( isPlatform("Mac") ) {
+            throw new RuntimeException("Wrong OS.");
         }
-    }
-
-    public void run(String user, String host, File id) throws IOException {
-      String command = "xterm -e ssh " +
-              defaults(user, host, id);
-
-      getRuntime().exec(command);
     }
 }

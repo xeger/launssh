@@ -19,12 +19,13 @@ import com.rightscale.util.*;
  */
 public class Mindterm extends SimpleLauncher {
     Applet     _applet    = null;
-    Launchpad  _launchpad = null;
     AppletStub _stub      = null;
     Thread     _thread    = null;
     
     public Mindterm(Launchpad launchpad, Applet applet, AppletStub stub)
     {
+        super(launchpad);
+        
         _applet    = applet;
         _launchpad = launchpad;
         _stub      = stub;

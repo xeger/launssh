@@ -8,6 +8,8 @@ import java.io.*;
 
 public class GenericSSH extends SimpleWindowsLauncher {
     public GenericSSH(Launchpad l) {
+        super(l);
+
         if( !isPlatform("Windows") || findExecutable("ssh") == null ) {
             throw new RuntimeException("Wrong OS, or 'ssh' command not found.");
         }

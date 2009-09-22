@@ -8,6 +8,8 @@ public class SecureCRT extends SimpleWindowsLauncher {
     private File _exe = null;
     
     public SecureCRT(Launchpad l) {
+        super(l);
+        
         _exe = findProgramFile("VanDyke Software\\SecureCRT", "SecureCRT");
 
         if(null == _exe) {

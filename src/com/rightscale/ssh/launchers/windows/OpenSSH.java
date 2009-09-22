@@ -8,6 +8,8 @@ public class OpenSSH extends SimpleWindowsLauncher {
     private File _exe = null;
     
     public OpenSSH(Launchpad l) {
+        super(l);
+        
         _exe = findProgramFile("OpenSSH", "bin\\ssh");
 
         if( !isPlatform("Windows") || null == _exe ) {

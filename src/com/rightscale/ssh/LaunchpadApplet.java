@@ -170,6 +170,14 @@ public class LaunchpadApplet
         return new File(_launchpad.getSafeDirectory(), getKeyName() + ".ppk");
     }
 
+    protected URL getTroubleshootingLink() {
+        try {
+            return new URL( getParameter("troubleshooting-url") );
+        }
+        catch(MalformedURLException e) {
+            return null;
+        }
+    }
 
     ////
     //// "Internal" Applet implementation and related methods; all require the
@@ -281,6 +289,15 @@ public class LaunchpadApplet
 
     boolean        _initialized = false;
     JPanel         _pnlMain     = null;
+
+    Action _actTroubleshoot = new AbstractAction("Troubleshoot") {
+        public void actionPerformed(ActionEvent evt) {
+            URL url = getTroubleshootingLink();
+            if(url != null) {
+                LaunchpadApplet.this.getAppletContext().showDocument(url, "_blank");
+            }
+        }
+    };
 
     Action _actRunNative = new AbstractAction("Use Native") {
         public void actionPerformed(ActionEvent evt) {
@@ -423,6 +440,14 @@ public class LaunchpadApplet
         lbl.setForeground(Color.RED);
         lbl.setAlignmentX(JComponent.CENTER_ALIGNMENT);
         pnlCenter.add(lbl);
+
+        if(getTroubleshootingLink() != null) {
+            pnlCenter.add(Box.createRigidArea(new Dimension(1, 16)));
+            Box pnlButtons = Box.createHorizontalBox();
+            pnlButtons.add(new JButton(_actTroubleshoot));
+            pnlCenter.add(pnlButtons);
+        }
+
         pnl.setLayout(new BorderLayout());
         pnl.add(pnlCenter, BorderLayout.CENTER);
         return pnl;

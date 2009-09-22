@@ -8,6 +8,8 @@ public class PuTTY extends SimpleWindowsLauncher {
     private File _exe = null;
     
     public PuTTY(Launchpad l) {
+        super(l);
+        
         _exe = findProgramFile("PuTTY", "putty");
 
         if(_exe == null) {

@@ -143,7 +143,7 @@ public class RightScaleLaunchpad
     }
 
     public void setUsername(String username) {
-        _username = _username;
+        _username = username;
     }
 
     public String getServer() {

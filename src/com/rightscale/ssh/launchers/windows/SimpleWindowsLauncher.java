@@ -5,6 +5,7 @@
 
 package com.rightscale.ssh.launchers.windows;
 
+import com.rightscale.ssh.*;
 import com.rightscale.ssh.launchers.*;
 import java.io.*;
 import java.util.Vector;
@@ -14,6 +15,10 @@ import java.util.Vector;
  * @author tony
  */
 public abstract class SimpleWindowsLauncher extends SimpleLauncher {
+    public SimpleWindowsLauncher(Launchpad l) {
+        super(l);
+    }
+
     public static File[] getPathEnv() {
         String path = System.getenv("PATH");
         String[] comps = path.split(";|:");
