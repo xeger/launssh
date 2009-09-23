@@ -51,6 +51,9 @@ public class FileUtils {
         BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(fos));
 
         InputStream in = klass.getResourceAsStream(resName);
+        if(in == null) {
+            throw new IOException("Could not getResourceAsStream(\"" + resName + "\")");
+        }
         BufferedReader br = new BufferedReader(new InputStreamReader(in));
 
         String crlf = System.getProperty("line.separator");

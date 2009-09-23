@@ -6,7 +6,6 @@ import com.rightscale.util.*;
 import java.io.*;
 
 public class SimpleUnixLauncher extends SimpleLauncher {
-    Launchpad _launchpad;
     String    _command;
     File      _script;
 
@@ -22,6 +21,8 @@ public class SimpleUnixLauncher extends SimpleLauncher {
     }
 
     public void run(String user, String host, File id) throws IOException {
+      createScripts();
+      
       String scr     = _script.getCanonicalPath();
       String command = _command + " " + scr + " " + defaults(user, host, id);
 

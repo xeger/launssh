@@ -6,7 +6,7 @@ import com.rightscale.util.*;
 import java.io.*;
 
 public class GnomeTerminal extends SimpleUnixLauncher {
-    public GnomeTerminal(Launchpad launchpad) {
-        super(launchpad, "gnome-terminal --help", "gnome-terminal -x");
+    public GnomeTerminal(Launchpad l) {
+        super(l, "gnome-terminal --help", "gnome-terminal -x");
     }
 }
