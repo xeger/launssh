@@ -349,7 +349,6 @@ public class LaunchpadApplet
         _pnlMain.add(pnlForcedMindterm, FORCED_MINDTERM);
 
         //Add the main and header panels to ourself
-        this.setBackground(Color.white);
         this.setLayout(new BorderLayout());
         this.add(header, BorderLayout.NORTH);
         this.add(_pnlMain, BorderLayout.CENTER);
