@@ -17,6 +17,11 @@ public class OpenSSH extends SimpleWindowsLauncher {
         }
     }
 
+    public String getFriendlyName()
+    {
+        return "OpenSSH";
+    }
+
     public void run(String user, String host, File id) throws IOException {
         String[] command = {
             "cmd.exe",

@@ -25,10 +25,10 @@ import java.security.*;
  *
  * @author tony
  */
-public class RightScaleLaunchpad
+public class SimpleLaunchpad
     implements Launchpad
 {
-    static final private int KEY_DELETION_TIMEOUT = 180;
+    static final private int KEY_DELETION_TIMEOUT = 300;
 
     static final private String[] LAUNCHERS = {
         "com.rightscale.ssh.launchers.osx.Applescript",
@@ -45,6 +45,7 @@ public class RightScaleLaunchpad
     private String               _server      = null;
     private String               _keyName     = null;
     private Map                  _keyMaterial = null;
+    private String               _password    = null;
     private ArrayList            _launchers   = new ArrayList();
     private Mindterm             _mindterm    = null;
     private Set                  _requiredKeys= new HashSet();
@@ -66,14 +67,17 @@ public class RightScaleLaunchpad
                 Constructor ctor = Class.forName(cn).getConstructor(paramTypes);
                 Launcher l = (Launcher) ctor.newInstance(params);
 
-                if(hasKeyFormat(l.getRequiredKeyFormat())) {
-                    _launchers.add(l);
-                    _requiredKeys.add( new Integer(l.getRequiredKeyFormat()) );
-                    System.err.println(cn + " is COMPATIBLE.");
-                }
-                else {
+                if(!hasKeyFormat(l.getRequiredKeyFormat())) {
                     System.err.println(cn + " is UNAVAILABLE (missing required key format).");
+                    continue;
                 }
+
+                if( (!this.hasKeyMaterial() && !l.canPasswordAuth()) ||
+                    (!this.hasPassword() && !l.canPublicKeyAuth()) )
+
+                System.err.println(cn + " is COMPATIBLE.");
+                _launchers.add(l);
+                _requiredKeys.add( new Integer(l.getRequiredKeyFormat()) );
             }
             catch(Exception e) {
                 Throwable t = e;
@@ -138,6 +142,22 @@ public class RightScaleLaunchpad
         _keyMaterial = keyMaterial;
     }
 
+    public boolean hasKeyMaterial() {
+        return ( (_keyMaterial == null) || _keyMaterial.isEmpty() );
+    }
+
+    public String getPassword() {
+        return _password;
+    }
+
+    public void setPassword(String password) {
+        _password = password;
+    }
+
+    public boolean hasPassword() {
+        return (_password != null);
+    }
+    
     public String getUsername() {
         return _username;
     }
@@ -255,9 +275,9 @@ public class RightScaleLaunchpad
                 l.run( getUsername(), getServer(), keyFile );
                 return true;
             }
-            catch(IOException e) {
+            catch(Exception e) {
                 System.err.println("Failed to launch using " + l.getFriendlyName() + ":");
-                System.err.println(e.toString());
+                e.printStackTrace(System.err);
             }
         }
 

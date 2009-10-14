@@ -5,7 +5,7 @@ import com.rightscale.ssh.launchers.*;
 import com.rightscale.util.*;
 import java.io.*;
 
-public class Applescript extends SimpleLauncher {
+public class Applescript extends OpenSshLauncher {
     private File      _terminalScript = null;
     private File      _itermScript    = null;
 

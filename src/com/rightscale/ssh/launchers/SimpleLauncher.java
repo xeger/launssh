@@ -23,19 +23,31 @@ public abstract class SimpleLauncher implements Launcher {
     }
 
     /**
-     * Return the most common friendly name, since most launchers invoke OpenSSH
-     * @return "OpenSSH"
-     */
-    public String getFriendlyName() {
-        return "OpenSSH";
-    }
-
-    /**
      * Return the most common key format for easier subclassing.
      * @return OPENSSH_KEY_FORMAT, which is used by the majority of launchers
      */
     public int getRequiredKeyFormat() {
         return OPENSSH_KEY_FORMAT;
+    }
+
+    public boolean canPasswordAuth() {
+        return false;
+    }
+
+    public boolean canPublicKeyAuth() {
+        return false;
+    }
+
+    public void run(String username, String hostname, File identity)
+        throws IOException, UnsupportedAuthMethod
+    {
+        throw new UnsupportedAuthMethod("Public-key authentication is not supported by this SSH client.");
+    }
+
+    public void run(String username, String hostname, String password)
+        throws IOException, UnsupportedAuthMethod
+    {
+        throw new UnsupportedAuthMethod("Password authentication is not supported by this SSH client.");
     }
 
     static public Runtime getRuntime()
@@ -80,34 +92,6 @@ public abstract class SimpleLauncher implements Launcher {
         }
         catch(IOException e) {
             return false;
-        }
-    }
-
-    static protected String defaults(String user, String host, File identity)
-        throws IOException
-    {
-        if(isPlatform("Windows")) {
-            return defaults(user, host, identity, "/i");
-        }
-        else {
-            return defaults(user, host, identity, "-i");
-        }
-    }
-    
-    static protected String defaults(String user, String host, File id, String sw)
-        throws IOException
-    {
-        if(id != null) {
-            /* Unices don't seem to like quotes around the file name */
-            if( isPlatform("Linux") || isPlatform("BSD") || isPlatform("nix") ) {
-                return sw + " " + id.getCanonicalPath() + " " + user + "@" + host;
-            }
-            else {
-                return sw + " \"" + id.getCanonicalPath() + "\" " + user + "@" + host;
-            }
-        }
-        else {
-            return user + "@" + host;
         }
     }
 }

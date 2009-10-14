@@ -26,7 +26,7 @@ public class LaunchpadApplet
     public static final String FORCED_MINDTERM = "forcedMindterm";
     public static final String USING_NATIVE    = "usingNative";
 
-    private RightScaleLaunchpad  _launchpad   = new RightScaleLaunchpad();
+    private SimpleLaunchpad      _launchpad   = new SimpleLaunchpad();
     private boolean              _ranNative   = false;
     private boolean              _ranMindterm = false;
     

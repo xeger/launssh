@@ -5,7 +5,7 @@ import com.rightscale.ssh.launchers.*;
 import com.rightscale.util.*;
 import java.io.*;
 
-public class SimpleUnixLauncher extends SimpleLauncher {
+public class SimpleUnixLauncher extends OpenSshLauncher {
     String    _command;
     File      _script;
 
