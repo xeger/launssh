@@ -67,17 +67,27 @@ public class SimpleLaunchpad
                 Constructor ctor = Class.forName(cn).getConstructor(paramTypes);
                 Launcher l = (Launcher) ctor.newInstance(params);
 
-                if(!hasKeyFormat(l.getRequiredKeyFormat())) {
+                if(!hasPassword() && !hasKeyFormat(l.getRequiredKeyFormat())) {
                     System.err.println(cn + " is UNAVAILABLE (missing required key format).");
                     continue;
                 }
 
-                if( (!this.hasKeyMaterial() && !l.canPasswordAuth()) ||
-                    (!this.hasPassword() && !l.canPublicKeyAuth()) )
+                if(!hasKeyMaterial() && !l.canPasswordAuth()) {
+                    System.err.println(cn + " is UNAVAILABLE (missing password).");
+                    continue;
+                }
+
+                if(!hasPassword() && !l.canPublicKeyAuth())
+                {
+                    System.err.println(cn + " is UNAVAILABLE (missing key material).");
+                    continue;
+                }
 
                 System.err.println(cn + " is COMPATIBLE.");
                 _launchers.add(l);
-                _requiredKeys.add( new Integer(l.getRequiredKeyFormat()) );
+                if(l.canPublicKeyAuth()) {
+                    _requiredKeys.add( new Integer(l.getRequiredKeyFormat()) );
+                }
             }
             catch(Exception e) {
                 Throwable t = e;
@@ -205,6 +215,10 @@ public class SimpleLaunchpad
     }
 
     public File getKeyFile(int keyFormat) {
+        if(getKeyName() == null) {
+            return null;
+        }
+
         switch(keyFormat) {
             case Launcher.OPENSSH_KEY_FORMAT:
                 return new File(getSafeDirectory(), getKeyName());
@@ -213,11 +227,10 @@ public class SimpleLaunchpad
             default:
                 throw new Error("Unsupported key format");
         }
-
     }
 
     ////
-    //// Methods that do work
+    //// Methods that do useful stuff
     ////
 
     public void writePrivateKeys()
@@ -226,13 +239,25 @@ public class SimpleLaunchpad
         if(_requiredKeys.contains(new Integer(Launcher.OPENSSH_KEY_FORMAT))) {
             String matl = getKeyMaterial(Launcher.OPENSSH_KEY_FORMAT);
             File   key  = getKeyFile(Launcher.OPENSSH_KEY_FORMAT);
-            SimpleLauncher.writePrivateKey(matl, key, KEY_DELETION_TIMEOUT);
+
+            if(matl != null && key != null) {
+                SimpleLauncher.writePrivateKey(matl, key, KEY_DELETION_TIMEOUT);
+            }
+            else {
+                System.out.println("Not writing OpenSSH key material (key material or name is null)");
+            }
 
         }
         if(_requiredKeys.contains(new Integer(Launcher.PUTTY_KEY_FORMAT))) {
             String matl = getKeyMaterial(Launcher.PUTTY_KEY_FORMAT);
             File   key  = getKeyFile(Launcher.PUTTY_KEY_FORMAT);
-            SimpleLauncher.writePrivateKey(matl, key, KEY_DELETION_TIMEOUT);
+
+            if(matl != null && key != null) {
+                SimpleLauncher.writePrivateKey(matl, key, KEY_DELETION_TIMEOUT);
+            }
+            else {
+                System.out.println("Not writing PuTTY key material (key material or name is null)");
+            }
         }
     }
 
@@ -248,8 +273,18 @@ public class SimpleLaunchpad
         }
 
         _mindterm = new Mindterm(this, applet, stub);
-        _mindterm.run( getUsername(), getServer(), getKeyFile(Launcher.OPENSSH_KEY_FORMAT) );
-        return true;
+
+        if(hasKeyFormat(Launcher.OPENSSH_KEY_FORMAT)) {
+            _mindterm.run( getUsername(), getServer(), getKeyFile(Launcher.OPENSSH_KEY_FORMAT) );
+            return true;
+        }
+        else if(hasPassword()) {
+            _mindterm.run( getUsername(), getServer(), getPassword() );
+            return true;
+        }
+        else {
+            return false;
+        }
     }
 
     public boolean runNative()
@@ -271,9 +306,15 @@ public class SimpleLaunchpad
             System.err.println("  Running " + l.getClass().getName());
 
             try {
-                File keyFile = getKeyFile(l.getRequiredKeyFormat());
-                l.run( getUsername(), getServer(), keyFile );
-                return true;
+                if(hasKeyMaterial()) {
+                    File keyFile = getKeyFile(l.getRequiredKeyFormat());
+                    l.run( getUsername(), getServer(), keyFile );
+                    return true;
+                }
+                else if(hasPassword()) {
+                    l.run( getUsername(), getServer(), getPassword() );
+                    return true;
+                }
             }
             catch(Exception e) {
                 System.err.println("Failed to launch using " + l.getFriendlyName() + ":");

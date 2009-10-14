@@ -19,6 +19,14 @@ public class GenericSSH extends SimpleWindowsLauncher {
         return "Generic SSH";
     }
 
+    public boolean canPublicKeyAuth() {
+        return true;
+    }
+
+    public int getRequiredKeyFormat() {
+        return OPENSSH_KEY_FORMAT;
+    }
+
     public void run(String user, String host, File id) throws IOException {
       File exe = findExecutable("ssh");
       String msg = exe.getCanonicalPath() + "\n" +

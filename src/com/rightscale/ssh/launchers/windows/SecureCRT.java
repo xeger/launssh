@@ -25,6 +25,10 @@ public class SecureCRT extends SimpleWindowsLauncher {
         return "SecureCRT";
     }
 
+    public boolean canPublicKeyAuth() {
+        return true;
+    }
+
     public int getRequiredKeyFormat() {
         return PUTTY_KEY_FORMAT;
     }

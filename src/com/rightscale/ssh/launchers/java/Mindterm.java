@@ -35,8 +35,24 @@ public class Mindterm extends SimpleLauncher {
         return "MindTerm";
     }
 
+    public boolean canPublicKeyAuth() {
+        return true;
+    }
+
+    public boolean canPasswordAuth() {
+        return true;
+    }
+
+    public int getRequiredKeyFormat() {
+        return OPENSSH_KEY_FORMAT;
+    }
+
     public void run(String user, String host, File id) throws IOException {
         writeMindtermKey(id);
+        launchMindterm();
+    }
+
+    public void run(String user, String host, String password) throws IOException {
         launchMindterm();
     }
 

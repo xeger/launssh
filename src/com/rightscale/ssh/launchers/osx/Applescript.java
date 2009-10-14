@@ -17,7 +17,9 @@ public class Applescript extends OpenSshLauncher {
         }
     }
 
-    public void run(String username, String hostname, File identity) throws IOException {
+    public void run(String username, String hostname, File identity)
+        throws IOException
+    {
       createScripts();
       
       String cmdline = defaults(username, hostname, identity);
@@ -39,7 +41,6 @@ public class Applescript extends OpenSshLauncher {
         p = getRuntime().exec( scr + " " + cmdline );
 
       }
-
     }
 
     private void createScripts() throws IOException {

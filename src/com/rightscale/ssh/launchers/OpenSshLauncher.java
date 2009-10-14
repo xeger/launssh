@@ -8,6 +8,7 @@ package com.rightscale.ssh.launchers;
 import com.rightscale.ssh.*;
 import com.rightscale.util.*;
 import java.io.*;
+import java.util.*;
 
 /**
  *
@@ -26,27 +27,24 @@ abstract public class OpenSshLauncher
         return "OpenSSH";
     }
 
-    static protected String defaults(String user, String host, File id)
-        throws IOException
-    {
-        if(isPlatform("Windows")) {
-            return defaults(user, host, id, "/i");
-        }
-        else {
-            return defaults(user, host, id, "-i");
-        }
+    public int getRequiredKeyFormat() {
+        return OPENSSH_KEY_FORMAT;
     }
 
-    static protected String defaults(String user, String host, File id, String sw)
+    public boolean canPublicKeyAuth() {
+        return true;
+    }
+
+    static protected String defaults(String user, String host, File id)
         throws IOException
     {
         if(id != null) {
             /* Unices don't seem to like quotes around the file name */
             if( isPlatform("Linux") || isPlatform("BSD") || isPlatform("nix") ) {
-                return sw + " " + id.getCanonicalPath() + " " + user + "@" + host;
+                return "-i" + " " + id.getCanonicalPath() + " " + user + "@" + host;
             }
             else {
-                return sw + " \"" + id.getCanonicalPath() + "\" " + user + "@" + host;
+                return "-i" + " \"" + id.getCanonicalPath() + "\" " + user + "@" + host;
             }
         }
         else {

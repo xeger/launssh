@@ -21,6 +21,10 @@ public class PuTTY extends SimpleWindowsLauncher {
         }
     }
 
+    public boolean canPublicKeyAuth() {
+        return true;
+    }
+
     public String getFriendlyName() {
         return "PuTTY";
     }

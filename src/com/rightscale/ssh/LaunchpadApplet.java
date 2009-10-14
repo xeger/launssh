@@ -162,6 +162,10 @@ public class LaunchpadApplet
         return km.replaceAll("\\*", newline);
     }
 
+    protected String getPassword() {
+        return getParameter("password");
+    }
+
     protected File getKeyFile() {
         return new File(_launchpad.getSafeDirectory(), getKeyName());
     }
@@ -194,6 +198,10 @@ public class LaunchpadApplet
 
         if( getPuttyKeyMaterial() != null ) {
             keyMaterial.put( new Integer(Launcher.PUTTY_KEY_FORMAT), getPuttyKeyMaterial() );
+        }
+
+        if(getPassword() != null && getPassword().length() > 0) {
+            _launchpad.setPassword(getPassword());
         }
 
         //Initialize the launchpad business logic

@@ -22,14 +22,6 @@ public abstract class SimpleLauncher implements Launcher {
         _launchpad = launchpad;
     }
 
-    /**
-     * Return the most common key format for easier subclassing.
-     * @return OPENSSH_KEY_FORMAT, which is used by the majority of launchers
-     */
-    public int getRequiredKeyFormat() {
-        return OPENSSH_KEY_FORMAT;
-    }
-
     public boolean canPasswordAuth() {
         return false;
     }

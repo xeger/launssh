@@ -22,6 +22,14 @@ public class OpenSSH extends SimpleWindowsLauncher {
         return "OpenSSH";
     }
 
+    public boolean canPublicKeyAuth() {
+        return true;
+    }
+
+    public int getRequiredKeyFormat() {
+        return OPENSSH_KEY_FORMAT;
+    }
+
     public void run(String user, String host, File id) throws IOException {
         String[] command = {
             "cmd.exe",
