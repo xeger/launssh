@@ -363,7 +363,8 @@ public class LaunchpadApplet
     }
 
     private Container createHeaderUI() {
-        Box pnl = Box.createVerticalBox();
+        JPanel pnl = new JPanel();
+        pnl.setLayout(new BoxLayout(pnl, BoxLayout.Y_AXIS));
         JLabel lbl = new JLabel( "Connecting to" );
         lbl.setAlignmentX(JComponent.CENTER_ALIGNMENT);
         pnl.add(lbl);

@@ -25,6 +25,10 @@ public class PuTTY extends SimpleWindowsLauncher {
         return true;
     }
 
+    public boolean canPasswordAuth() {
+        return true;
+    }
+
     public String getFriendlyName() {
         return "PuTTY";
     }
@@ -33,11 +37,28 @@ public class PuTTY extends SimpleWindowsLauncher {
         return PUTTY_KEY_FORMAT;
     }
 
-    public void run(String user, String host, File id) throws IOException {
-        String command = _exe.getCanonicalPath() + " " +
-                defaults(user, host, id, "-i");
+    @Override
+    public void run(String user, String host, File id)
+        throws IOException
+    {
+        StringBuffer sb = new StringBuffer();
 
-        System.err.println(command);
-        getRuntime().exec(command);
+        sb.append(_exe.getCanonicalPath());
+        sb.append( String.format(" -i \"%s\"", id.getCanonicalPath()) );
+        sb.append( String.format(" %s@%s", user, host) );
+
+        getRuntime().exec(sb.toString());
+    }
+
+    public void run(String user, String host, String password)
+        throws IOException
+    {
+        StringBuffer sb = new StringBuffer();
+
+        sb.append(_exe.getCanonicalPath());
+        sb.append( String.format(" -pw \"%s\"", password) );
+        sb.append( String.format(" %s@%s", user, host) );
+
+        getRuntime().exec(sb.toString());
     }
 }

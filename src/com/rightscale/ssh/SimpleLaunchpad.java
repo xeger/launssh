@@ -153,7 +153,7 @@ public class SimpleLaunchpad
     }
 
     public boolean hasKeyMaterial() {
-        return ( (_keyMaterial == null) || _keyMaterial.isEmpty() );
+        return !( (_keyMaterial == null) || _keyMaterial.isEmpty() );
     }
 
     public String getPassword() {

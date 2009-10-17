@@ -31,24 +31,35 @@ abstract public class OpenSshLauncher
         return OPENSSH_KEY_FORMAT;
     }
 
+    @Override
     public boolean canPublicKeyAuth() {
         return true;
     }
 
-    static protected String defaults(String user, String host, File id)
+    protected String defaults(String user, String host, File id)
         throws IOException
     {
-        if(id != null) {
-            /* Unices don't seem to like quotes around the file name */
-            if( isPlatform("Linux") || isPlatform("BSD") || isPlatform("nix") ) {
-                return "-i" + " " + id.getCanonicalPath() + " " + user + "@" + host;
-            }
-            else {
-                return "-i" + " \"" + id.getCanonicalPath() + "\" " + user + "@" + host;
-            }
+        StringBuffer sb = new StringBuffer();
+
+        File known_hosts = new File(_launchpad.getSafeDirectory(), "cloud_hosts");
+
+        sb.append( " -o StrictHostKeyChecking=no" );
+
+        /* Unices don't seem to like quotes around the file name */
+        if( isPlatform("Linux") || isPlatform("BSD") || isPlatform("nix") ) {
+            sb.append( String.format(" -o UserKnownHostsFile=%s", known_hosts.getCanonicalPath()) );
+            if(id != null)
+                sb.append( String.format(" -i %s", id.getCanonicalPath()) );
+        /* Windowses NEED quotes around the file name */
         }
         else {
-            return user + "@" + host;
+            sb.append( String.format(" -o UserKnownHostsFile=\"%s\"", known_hosts.getCanonicalPath()) );
+            if(id != null) 
+                sb.append( String.format(" -i \"%s\"", id.getCanonicalPath()) );
         }
+
+        sb.append( String.format(" %s@%s", user, host) );
+
+        return sb.toString();
     }
 }

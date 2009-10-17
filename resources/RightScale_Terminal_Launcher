@@ -6,6 +6,7 @@ on run argv
 
 	tell application "Terminal" to activate
 	tell application "System Events" to tell process "Terminal" to keystroke "t" using command down
+    delay 1
 	tell application "Terminal"
 		tell window 0 to tell selected tab to tell current settings
 			set custom title to "RightScale SSH"

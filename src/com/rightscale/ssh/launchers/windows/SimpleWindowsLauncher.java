@@ -19,24 +19,6 @@ public abstract class SimpleWindowsLauncher extends SimpleLauncher {
         super(l);
     }
 
-
-    static protected String defaults(String user, String host, File id)
-        throws IOException
-    {
-        return defaults(user, host, id, "/i");
-    }
-
-    static protected String defaults(String user, String host, File id, String dash_i)
-        throws IOException
-    {
-        if(id != null) {
-            return dash_i + " \"" + id.getCanonicalPath() + "\" " + user + "@" + host;
-        }
-        else {
-            return user + "@" + host;
-        }
-    }
-
     public static File[] getPathEnv() {
         String path = System.getenv("PATH");
         String[] comps = path.split(";|:");
