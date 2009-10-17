@@ -144,8 +144,8 @@ public class LaunchpadApplet
             return "localhost";
     }
 
-    protected String getKeyName() {
-        return getParameter("private-key");
+    protected String getServerUUID() {
+        return getParameter("server-uuid");
     }
 
     protected String getKeyMaterial() {
@@ -167,11 +167,11 @@ public class LaunchpadApplet
     }
 
     protected File getKeyFile() {
-        return new File(_launchpad.getSafeDirectory(), getKeyName());
+        return new File(_launchpad.getSafeDirectory(), getServerUUID());
     }
 
     protected File getPuttyKeyFile() {
-        return new File(_launchpad.getSafeDirectory(), getKeyName() + ".ppk");
+        return new File(_launchpad.getSafeDirectory(), getServerUUID() + ".ppk");
     }
 
     protected URL getTroubleshootingLink() {
@@ -207,7 +207,7 @@ public class LaunchpadApplet
         //Initialize the launchpad business logic
         _launchpad.setUsername(getUsername());
         _launchpad.setServer(getServer());
-        _launchpad.setKeyName(getKeyName());
+        _launchpad.setServerUUID(getServerUUID());
         _launchpad.setKeyMaterial(keyMaterial);
         _launchpad.init();
 

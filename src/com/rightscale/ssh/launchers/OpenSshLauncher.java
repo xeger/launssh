@@ -41,7 +41,7 @@ abstract public class OpenSshLauncher
     {
         StringBuffer sb = new StringBuffer();
 
-        File known_hosts = new File(_launchpad.getSafeDirectory(), "cloud_hosts");
+        File known_hosts = new File(_launchpad.getSafeDirectory(), "known_hosts");
 
         sb.append( " -o StrictHostKeyChecking=no" );
 
@@ -50,12 +50,16 @@ abstract public class OpenSshLauncher
             sb.append( String.format(" -o UserKnownHostsFile=%s", known_hosts.getCanonicalPath()) );
             if(id != null)
                 sb.append( String.format(" -i %s", id.getCanonicalPath()) );
+            if(_launchpad.getServerUUID() != null)
+                sb.append( String.format(" -o HostKeyAlias=%s", _launchpad.getServerUUID()) );
         /* Windowses NEED quotes around the file name */
         }
         else {
             sb.append( String.format(" -o UserKnownHostsFile=\"%s\"", known_hosts.getCanonicalPath()) );
             if(id != null) 
                 sb.append( String.format(" -i \"%s\"", id.getCanonicalPath()) );
+            if(_launchpad.getServerUUID() != null)
+                sb.append( String.format(" -o HostKeyAlias=\"%s\"", _launchpad.getServerUUID()) );
         }
 
         sb.append( String.format(" %s@%s", user, host) );

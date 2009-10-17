@@ -43,7 +43,7 @@ public class SimpleLaunchpad
 
     private String               _username    = null;
     private String               _server      = null;
-    private String               _keyName     = null;
+    private String               _serverUUID     = null;
     private Map                  _keyMaterial = null;
     private String               _password    = null;
     private ArrayList            _launchers   = new ArrayList();
@@ -188,12 +188,12 @@ public class SimpleLaunchpad
         _server = server;
     }
     
-    public String getKeyName() {
-        return _keyName;
+    public String getServerUUID() {
+        return _serverUUID;
     }
 
-    public void setKeyName(String keyName) {
-        _keyName = keyName;
+    public void setServerUUID(String serverUUID) {
+        _serverUUID = serverUUID;
     }
 
 
@@ -223,15 +223,15 @@ public class SimpleLaunchpad
     }
 
     public File getKeyFile(int keyFormat) {
-        if(getKeyName() == null) {
+        if(getServerUUID() == null) {
             return null;
         }
 
         switch(keyFormat) {
             case Launcher.OPENSSH_KEY_FORMAT:
-                return new File(getSafeDirectory(), getKeyName());
+                return new File(getSafeDirectory(), getServerUUID());
             case Launcher.PUTTY_KEY_FORMAT:
-                return new File(getSafeDirectory(), getKeyName() + ".ppk");
+                return new File(getSafeDirectory(), getServerUUID() + ".ppk");
             default:
                 throw new Error("Unsupported key format");
         }

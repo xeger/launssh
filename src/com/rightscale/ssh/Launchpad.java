@@ -14,5 +14,6 @@ import  java.io.*;
 public interface Launchpad {
     public void init();
     public File getSafeDirectory() throws IOException;
+    public String getServerUUID();
     public void reportError(String message, Exception e);
 }
