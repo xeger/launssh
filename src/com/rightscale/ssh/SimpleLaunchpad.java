@@ -47,6 +47,7 @@ public class SimpleLaunchpad
     private Map                  _keyMaterial = null;
     private String               _password    = null;
     private ArrayList            _launchers   = new ArrayList();
+    private String               _nativeClientStatus = null;
     private Mindterm             _mindterm    = null;
     private Set                  _requiredKeys= new HashSet();
     private Map                  _writtenKeys = new HashMap();
@@ -69,17 +70,20 @@ public class SimpleLaunchpad
 
                 if(!hasPassword() && !hasKeyFormat(l.getRequiredKeyFormat())) {
                     System.err.println(cn + " is UNAVAILABLE (missing required key format).");
+                    _nativeClientStatus = l.getFriendlyName() + " requires a key format that is unavailable.";
                     continue;
                 }
 
                 if(!hasKeyMaterial() && !l.canPasswordAuth()) {
-                    System.err.println(cn + " is UNAVAILABLE (missing password).");
+                    System.err.println(cn + " is UNAVAILABLE (password-based auth unsupported).");
+                    _nativeClientStatus = l.getFriendlyName() + " does not support noninteractive password authentication.";
                     continue;
                 }
 
                 if(!hasPassword() && !l.canPublicKeyAuth())
                 {
-                    System.err.println(cn + " is UNAVAILABLE (missing key material).");
+                    System.err.println(cn + " is UNAVAILABLE (public-key auth unsupported).");
+                    _nativeClientStatus = l.getFriendlyName() + " does not support public-key authentication.";
                     continue;
                 }
 
@@ -212,6 +216,10 @@ public class SimpleLaunchpad
         else {
             return "MindTerm";
         }
+    }
+
+    public String getNativeClientStatus() {
+        return _nativeClientStatus;
     }
 
     public File getKeyFile(int keyFormat) {

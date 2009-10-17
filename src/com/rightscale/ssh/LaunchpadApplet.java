@@ -215,6 +215,9 @@ public class LaunchpadApplet
         if(_launchpad.isNativeClientAvailable()) {
             _actRunNative.putValue(_actRunNative.NAME, "Use " + _launchpad.getNativeClientName());
         }
+        else {
+            _lblForcedMindtermReason.setText(_launchpad.getNativeClientStatus());
+        }
 
         //Initialize the UI (only if we haven't already done it)
         if(!_initialized) {
@@ -298,6 +301,10 @@ public class LaunchpadApplet
     boolean        _initialized = false;
     JPanel         _pnlMain     = null;
 
+    JLabel _lblForcedMindtermReason =
+        new JLabel( "Could not invoke your system's SSH client.");
+
+    
     Action _actTroubleshoot = new AbstractAction("Troubleshoot") {
         public void actionPerformed(ActionEvent evt) {
             URL url = getTroubleshootingLink();
@@ -433,9 +440,10 @@ public class LaunchpadApplet
     private Container createForcedMindtermUI() {
         JPanel pnl = new JPanel();
         Box pnlCenter = Box.createVerticalBox();
-        JLabel lbl = new JLabel( "Your system does not appear to contain a compatible SSH client.");
-        lbl.setAlignmentX(JComponent.CENTER_ALIGNMENT);
-        pnlCenter.add(lbl);
+
+        _lblForcedMindtermReason.setAlignmentX(JComponent.CENTER_ALIGNMENT);
+        pnlCenter.add(_lblForcedMindtermReason);
+        JLabel lbl = null;
         lbl = new JLabel( "Using MindTerm instead.");
         lbl.setAlignmentX(JComponent.CENTER_ALIGNMENT);
         pnlCenter.add(lbl);
