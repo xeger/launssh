@@ -19,6 +19,7 @@ import java.util.*;
 import java.applet.Applet;
 import java.applet.AppletStub;
 import java.security.*;
+import java.util.regex.*;
 
 
 /**
@@ -165,6 +166,7 @@ public class SimpleLaunchpad
     }
 
     public void setPassword(String password) {
+        validate(password);
         _password = password;
     }
 
@@ -177,6 +179,7 @@ public class SimpleLaunchpad
     }
 
     public void setUsername(String username) {
+        validate(username);
         _username = username;
     }
 
@@ -185,6 +188,7 @@ public class SimpleLaunchpad
     }
 
     public void setServer(String server) {
+        validate(server);
         _server = server;
     }
     
@@ -193,6 +197,7 @@ public class SimpleLaunchpad
     }
 
     public void setServerUUID(String serverUUID) {
+        validate(serverUUID);
         _serverUUID = serverUUID;
     }
 
@@ -331,5 +336,13 @@ public class SimpleLaunchpad
         }
 
         return false;
+    }
+
+    private void validate(String str) {
+        Pattern p = Pattern.compile("[^A-Za-z0-9\\_\\-\\.]");
+        Matcher m = p.matcher(str);
+        if(m.matches()) {
+            throw new SecurityException("Input contains unsafe characters: " + str);
+        }
     }
 }
