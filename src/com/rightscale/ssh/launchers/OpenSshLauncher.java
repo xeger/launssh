@@ -43,8 +43,6 @@ abstract public class OpenSshLauncher
 
         File known_hosts = new File(_launchpad.getSafeDirectory(), "known_hosts");
 
-        sb.append( " -o StrictHostKeyChecking=no" );
-
         /* Unices don't seem to like quotes around the file name */
         if( isPlatform("Linux") || isPlatform("BSD") || isPlatform("nix") ) {
             sb.append( String.format(" -o UserKnownHostsFile=%s", known_hosts.getCanonicalPath()) );
