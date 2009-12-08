@@ -21,6 +21,9 @@ public class LaunchpadApplet
         extends Applet
         implements AppletStub
 {
+    public static final String AUTH_METHOD_PUBLIC_KEY = "publickey";
+    public static final String AUTH_METHOD_PASSWORD   = "password";
+    
     public static final String CHOOSING        = "choosing";
     public static final String USING_MINDTERM  = "usingMindterm";
     public static final String FORCED_MINDTERM = "forcedMindterm";
@@ -148,14 +151,23 @@ public class LaunchpadApplet
         return getParameter("server-uuid");
     }
 
-    protected String getKeyMaterial() {
+    protected String getAuthMethod() {
+        if("publickey".equals(getParameter("auth-method")))
+            return AUTH_METHOD_PUBLIC_KEY;
+        else if("password".equals(getParameter("auth-method")))
+            return AUTH_METHOD_PASSWORD;
+        else
+            return null;
+    }
+
+    protected String getServerKeyMaterial() {
         String newline = System.getProperty("line.separator");
         String km = getParameter("openssh-key-material");
         if(km == null) return null;
         return km.replaceAll("\\*", newline);
     }
 
-    protected String getPuttyKeyMaterial() {
+    protected String getServerPuttyKeyMaterial() {
         String newline = System.getProperty("line.separator");
         String km = getParameter("putty-key-material");
         if(km == null) return null;
@@ -166,12 +178,84 @@ public class LaunchpadApplet
         return getParameter("password");
     }
 
-    protected File getKeyFile() {
+    protected String getUserKeyName() {
+        String ukn = getParameter("user-key-name");
+        if(ukn != null)
+            return ukn;
+        else
+            return "identity";
+    }
+
+    protected File getServerKeyFile() {
         return new File(_launchpad.getSafeDirectory(), getServerUUID());
     }
 
-    protected File getPuttyKeyFile() {
+    protected File getServerPuttyKeyFile() {
         return new File(_launchpad.getSafeDirectory(), getServerUUID() + ".ppk");
+    }
+
+    protected File getUserKeyFile() {
+        return new File(_launchpad.getSafeDirectory(), getUserKeyName());
+    }
+
+    protected File getUserPuttyKeyFile() {
+        return new File(_launchpad.getSafeDirectory(), getUserKeyName() + ".ppk");
+    }
+
+    protected boolean hasUserKeyFile() {
+        File f = getUserKeyFile();
+        return f.exists();
+    }
+
+    protected boolean hasUserPuttyKeyFile() {
+        File f = getUserPuttyKeyFile();
+        return f.exists();
+    }
+
+    protected String getUserKeyMaterial()
+    {
+        try {
+            if(hasUserKeyFile()) {
+                File f = getUserKeyFile();
+                BufferedReader br = new BufferedReader(new InputStreamReader(new FileInputStream(f)));
+                StringBuffer sb = new StringBuffer();
+                while(br.ready()) {
+                    sb.append(br.readLine());
+                    sb.append("\n");
+                }
+
+                return sb.toString();
+            }
+            else {
+                throw new Error("Key file does not exist");
+            }
+        }
+        catch(Exception e) {
+            return null;
+        }
+    }
+
+    protected String getUserPuttyKeyMaterial()
+    {
+        try {
+            if(hasUserPuttyKeyFile()) {
+                File f = getUserPuttyKeyFile();
+                BufferedReader br = new BufferedReader(new InputStreamReader(new FileInputStream(f)));
+                StringBuffer sb = new StringBuffer();
+                while(br.ready()) {
+                    sb.append(br.readLine());
+                    sb.append("\n");
+                }
+
+                return sb.toString();
+            }
+            else {
+                throw new Error("Key file does not exist");
+            }
+        }
+        catch(Exception e) {
+            return null;
+        }
     }
 
     protected URL getTroubleshootingLink() {
@@ -192,16 +276,30 @@ public class LaunchpadApplet
     {
         Map keyMaterial = new HashMap();
 
-        if( getKeyMaterial() != null ) {
-            keyMaterial.put( new Integer(Launcher.OPENSSH_KEY_FORMAT), getKeyMaterial() );
+        if( getUserKeyName() != null && hasUserKeyFile() ) {
+            keyMaterial.put( new Integer(Launcher.OPENSSH_KEY_FORMAT), getUserKeyMaterial() );
+        }
+        else if( getServerKeyMaterial() != null ) {
+            keyMaterial.put( new Integer(Launcher.OPENSSH_KEY_FORMAT), getServerKeyMaterial() );
+        }
+        else if( getAuthMethod() == AUTH_METHOD_PUBLIC_KEY ) {
+            boolean why = getUserKeyName() != null && hasUserKeyFile();
+            System.out.println("WARNING: OpenSSH key material is unavailable (" + why + ")");
         }
 
-        if( getPuttyKeyMaterial() != null ) {
-            keyMaterial.put( new Integer(Launcher.PUTTY_KEY_FORMAT), getPuttyKeyMaterial() );
+        if( getUserKeyName() != null && hasUserPuttyKeyFile() ) {
+            keyMaterial.put( new Integer(Launcher.PUTTY_KEY_FORMAT), getUserPuttyKeyMaterial() );
+        }
+        if( getServerPuttyKeyMaterial() != null ) {
+            keyMaterial.put( new Integer(Launcher.PUTTY_KEY_FORMAT), getServerPuttyKeyMaterial() );
+        }
+        else if( getAuthMethod() == AUTH_METHOD_PUBLIC_KEY ) {
+            boolean why = getUserKeyName() != null && hasUserPuttyKeyFile();
+            System.out.println("WARNING: PuTTY key material is unavailable (" + why + ")");
         }
 
-        if(getPassword() != null && getPassword().length() > 0) {
-            _launchpad.setPassword(getPassword());
+        if(keyMaterial.isEmpty()) {
+            _launchpad.reportError("Unable to find a suitable private key on your local disk or in the applet parameters.", null);
         }
 
         //Initialize the launchpad business logic
@@ -210,6 +308,9 @@ public class LaunchpadApplet
         _launchpad.setServerUUID(getServerUUID());
         _launchpad.setKeyMaterial(keyMaterial);
         _launchpad.init();
+        if(getPassword() != null && getPassword().length() > 0) {
+            _launchpad.setPassword(getPassword());
+        }
 
         //Fix up the "use native client" button's text for friendlier UI
         if(_launchpad.isNativeClientAvailable()) {
@@ -382,6 +483,7 @@ public class LaunchpadApplet
         return pnl;
     }
 
+
     private Container createChoosingUI() {
         JPanel pnl = new JPanel();
         Box pnlCenter = Box.createVerticalBox();
@@ -410,6 +512,9 @@ public class LaunchpadApplet
         lbl.setAlignmentX(JComponent.CENTER_ALIGNMENT);
         pnlCenter.add(lbl);
         pnlCenter.add(Box.createRigidArea(new Dimension(1, 16)));
+        JButton btnRunNative = new JButton(_actRunNative);
+                btnRunNative.setText("New Session");
+        pnlButtons.add(btnRunNative);
         pnlButtons.add(new JButton(_actRunMindterm));
         pnlCenter.add(pnlButtons);
         pnl.setLayout(new BorderLayout());

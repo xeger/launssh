@@ -4,15 +4,16 @@ on run argv
     set AppleScript's text item delimiters to " "
     set cmd to (argv as text)
 
-	tell application "Terminal" to activate
-	tell application "System Events" to tell process "Terminal" to keystroke "t" using command down
-    delay 1
-	tell application "Terminal"
-		tell window 0 to tell selected tab to tell current settings
-			set custom title to "RightScale SSH"
-			set clean commands to ["ssh", "login", "bash"]
-		end tell
-		do script with command "~/.rightscale/RightScale_SSH_Wrapper " & cmd & " ; logout" in window 0
-	end tell
-end run
+    tell application "Terminal" to activate
+    delay 1.5
+    tell application "System Events" to tell process "Terminal" to keystroke "t" using command down
 
+    tell application "Terminal"
+        tell window 0 to tell selected tab to tell current settings
+            set clean commands to ["ssh", "login", "bash"]
+	end tell
+
+	do script with command "~/.rightscale/RightScale_SSH_Wrapper " & cmd & " ; logout" in window 0
+    end tell
+
+end run
