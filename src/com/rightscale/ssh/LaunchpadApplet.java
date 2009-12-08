@@ -179,11 +179,7 @@ public class LaunchpadApplet
     }
 
     protected String getUserKeyName() {
-        String ukn = getParameter("user-key-name");
-        if(ukn != null)
-            return ukn;
-        else
-            return "identity";
+        return getParameter("user-key-name");
     }
 
     protected File getServerKeyFile() {
@@ -457,7 +453,7 @@ public class LaunchpadApplet
                   pnlForcedMindterm = createForcedMindtermUI();
 
         //Add all of the initialized panels to the main (CardLayout) panel
-        _pnlMain = new JPanel();
+        _pnlMain = createPanel();
         _pnlMain.setLayout(new CardLayout());
         _pnlMain.add(pnlChoosing, CHOOSING);
         _pnlMain.add(pnlUsingNative, USING_NATIVE);
@@ -470,8 +466,14 @@ public class LaunchpadApplet
         this.add(_pnlMain, BorderLayout.CENTER);
     }
 
-    private Container createHeaderUI() {
+    private JPanel createPanel() {
         JPanel pnl = new JPanel();
+        pnl.setBackground(Color.white);
+        return pnl;
+    }
+
+    private Container createHeaderUI() {
+        JPanel pnl = createPanel();
         pnl.setLayout(new BoxLayout(pnl, BoxLayout.Y_AXIS));
         JLabel lbl = new JLabel( "Connecting to" );
         lbl.setAlignmentX(JComponent.CENTER_ALIGNMENT);
@@ -485,7 +487,7 @@ public class LaunchpadApplet
 
 
     private Container createChoosingUI() {
-        JPanel pnl = new JPanel();
+        JPanel pnl = createPanel();
         Box pnlCenter = Box.createVerticalBox();
         Box pnlButtons = Box.createHorizontalBox();
         JLabel lbl = new JLabel( "How do you want to connect?" );
@@ -502,7 +504,7 @@ public class LaunchpadApplet
     }
 
     private Container createUsingNativeUI() {
-        JPanel pnl = new JPanel();
+        JPanel pnl = createPanel();
         Box pnlCenter = Box.createVerticalBox();
         Box pnlButtons = Box.createHorizontalBox();
         JLabel lbl = new JLabel( _launchpad.getNativeClientName() + " will launch in a separate window." );
@@ -523,7 +525,7 @@ public class LaunchpadApplet
     }
 
     private Container createUsingMindtermUI() {
-        JPanel pnl = new JPanel();
+        JPanel pnl = createPanel();
         Box pnlCenter = Box.createVerticalBox();
         JLabel lbl = new JLabel( "Using MindTerm pure-Java SSH client.");
         lbl.setAlignmentX(JComponent.CENTER_ALIGNMENT);
@@ -543,7 +545,7 @@ public class LaunchpadApplet
     }
 
     private Container createForcedMindtermUI() {
-        JPanel pnl = new JPanel();
+        JPanel pnl = createPanel();
         Box pnlCenter = Box.createVerticalBox();
 
         _lblForcedMindtermReason.setAlignmentX(JComponent.CENTER_ALIGNMENT);
