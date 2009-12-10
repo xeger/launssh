@@ -178,8 +178,8 @@ public class LaunchpadApplet
         return getParameter("password");
     }
 
-    protected String getUserKeyName() {
-        return getParameter("user-key-name");
+    protected String getUserKeyPath() {
+        return getParameter("user-key-path");
     }
 
     protected File getServerKeyFile() {
@@ -191,15 +191,47 @@ public class LaunchpadApplet
     }
 
     protected File getUserKeyFile() {
-        return new File(_launchpad.getSafeDirectory(), getUserKeyName());
+        String path = getUserKeyPath();
+        if(path == null)
+            return null;
+
+
+        //Split the path into elements, accepting either \ or / as a separator
+        String[] elements = path.split("/|\\\\");
+
+        String home = System.getProperty("user.home");
+
+        StringBuffer canonPath = new StringBuffer();
+        canonPath.append(home);
+
+        for(String elem : elements) {
+            canonPath.append(File.separator);
+            canonPath.append(elem);
+        }
+
+        return new File(canonPath.toString());
     }
 
     protected File getUserPuttyKeyFile() {
-        return new File(_launchpad.getSafeDirectory(), getUserKeyName() + ".ppk");
+        File f = getUserKeyFile();
+        String s = f.getPath();
+
+        if(s.endsWith(".ppk")) {
+            return f;
+        }
+        else {
+            return new File(s + ".ppk");
+        }
     }
 
     protected boolean hasUserKeyFile() {
         File f = getUserKeyFile();
+        try {
+            System.out.println(f.getCanonicalPath());
+        }
+        catch(IOException e) {
+            System.out.println(e.toString());
+        }
         return f.exists();
     }
 
@@ -273,25 +305,25 @@ public class LaunchpadApplet
         Map keyMaterial = new HashMap();
 
         if( getAuthMethod() == AUTH_METHOD_PUBLIC_KEY ) {
-            if( getUserKeyName() != null && hasUserKeyFile() ) {
+            if( getUserKeyPath() != null && hasUserKeyFile() ) {
                 keyMaterial.put( new Integer(Launcher.OPENSSH_KEY_FORMAT), getUserKeyMaterial() );
             }
             else if( getServerKeyMaterial() != null ) {
                 keyMaterial.put( new Integer(Launcher.OPENSSH_KEY_FORMAT), getServerKeyMaterial() );
             }
             else {
-                boolean why = getUserKeyName() != null && hasUserKeyFile();
+                boolean why = getUserKeyPath() != null && hasUserKeyFile();
                 System.out.println("OpenSSH key material not found (" + why + ")");
             }
 
-            if( getUserKeyName() != null && hasUserPuttyKeyFile() ) {
+            if( getUserKeyPath() != null && hasUserPuttyKeyFile() ) {
                 keyMaterial.put( new Integer(Launcher.PUTTY_KEY_FORMAT), getUserPuttyKeyMaterial() );
             }
             if( getServerPuttyKeyMaterial() != null ) {
                 keyMaterial.put( new Integer(Launcher.PUTTY_KEY_FORMAT), getServerPuttyKeyMaterial() );
             }
             else {
-                boolean why = getUserKeyName() != null && hasUserPuttyKeyFile();
+                boolean why = getUserKeyPath() != null && hasUserPuttyKeyFile();
                 System.out.println("PuTTY key material not found (" + why + ")");
             }
 
