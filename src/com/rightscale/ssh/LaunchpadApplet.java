@@ -272,30 +272,32 @@ public class LaunchpadApplet
     {
         Map keyMaterial = new HashMap();
 
-        if( getUserKeyName() != null && hasUserKeyFile() ) {
-            keyMaterial.put( new Integer(Launcher.OPENSSH_KEY_FORMAT), getUserKeyMaterial() );
-        }
-        else if( getServerKeyMaterial() != null ) {
-            keyMaterial.put( new Integer(Launcher.OPENSSH_KEY_FORMAT), getServerKeyMaterial() );
-        }
-        else if( getAuthMethod() == AUTH_METHOD_PUBLIC_KEY ) {
-            boolean why = getUserKeyName() != null && hasUserKeyFile();
-            System.out.println("WARNING: OpenSSH key material is unavailable (" + why + ")");
-        }
+        if( getAuthMethod() == AUTH_METHOD_PUBLIC_KEY ) {
+            if( getUserKeyName() != null && hasUserKeyFile() ) {
+                keyMaterial.put( new Integer(Launcher.OPENSSH_KEY_FORMAT), getUserKeyMaterial() );
+            }
+            else if( getServerKeyMaterial() != null ) {
+                keyMaterial.put( new Integer(Launcher.OPENSSH_KEY_FORMAT), getServerKeyMaterial() );
+            }
+            else {
+                boolean why = getUserKeyName() != null && hasUserKeyFile();
+                System.out.println("OpenSSH key material not found (" + why + ")");
+            }
 
-        if( getUserKeyName() != null && hasUserPuttyKeyFile() ) {
-            keyMaterial.put( new Integer(Launcher.PUTTY_KEY_FORMAT), getUserPuttyKeyMaterial() );
-        }
-        if( getServerPuttyKeyMaterial() != null ) {
-            keyMaterial.put( new Integer(Launcher.PUTTY_KEY_FORMAT), getServerPuttyKeyMaterial() );
-        }
-        else if( getAuthMethod() == AUTH_METHOD_PUBLIC_KEY ) {
-            boolean why = getUserKeyName() != null && hasUserPuttyKeyFile();
-            System.out.println("WARNING: PuTTY key material is unavailable (" + why + ")");
-        }
+            if( getUserKeyName() != null && hasUserPuttyKeyFile() ) {
+                keyMaterial.put( new Integer(Launcher.PUTTY_KEY_FORMAT), getUserPuttyKeyMaterial() );
+            }
+            if( getServerPuttyKeyMaterial() != null ) {
+                keyMaterial.put( new Integer(Launcher.PUTTY_KEY_FORMAT), getServerPuttyKeyMaterial() );
+            }
+            else {
+                boolean why = getUserKeyName() != null && hasUserPuttyKeyFile();
+                System.out.println("PuTTY key material not found (" + why + ")");
+            }
 
-        if(keyMaterial.isEmpty()) {
-            _launchpad.reportError("Unable to find a suitable private key on your local disk or in the applet parameters.", null);
+            if(keyMaterial.isEmpty()) {
+                _launchpad.reportError("Unable to find a private key on your local disk or in the applet parameters.", null);
+            }
         }
 
         //Initialize the launchpad business logic
