@@ -28,10 +28,12 @@ public class LaunchpadApplet
     public static final String USING_MINDTERM  = "usingMindterm";
     public static final String FORCED_MINDTERM = "forcedMindterm";
     public static final String USING_NATIVE    = "usingNative";
+    public static final String MISSING_KEY     = "missingKey";
 
     private SimpleLaunchpad      _launchpad   = new SimpleLaunchpad();
     private boolean              _ranNative   = false;
     private boolean              _ranMindterm = false;
+    private boolean              _hadFailure  = false;
     
     ////
     //// Methods that allow the page's JS to query our state
@@ -45,6 +47,10 @@ public class LaunchpadApplet
         return _ranMindterm;
     }
     
+    public boolean hadFailure() {
+        return _hadFailure;
+    }
+
     ////
     //// AppletStub implementation
     ////
@@ -226,12 +232,6 @@ public class LaunchpadApplet
 
     protected boolean hasUserKeyFile() {
         File f = getUserKeyFile();
-        try {
-            System.out.println(f.getCanonicalPath());
-        }
-        catch(IOException e) {
-            System.out.println(e.toString());
-        }
         return f.exists();
     }
 
@@ -302,6 +302,8 @@ public class LaunchpadApplet
 
     private void init_()
     {
+        _ranNative = _ranMindterm = _hadFailure = false;
+        
         Map keyMaterial = new HashMap();
 
         if( getAuthMethod() == AUTH_METHOD_PUBLIC_KEY ) {
@@ -327,8 +329,8 @@ public class LaunchpadApplet
                 System.out.println("PuTTY key material not found (" + why + ")");
             }
 
-            if(keyMaterial.isEmpty()) {
-                _launchpad.reportError("Unable to find a private key on your local disk or in the applet parameters.", null);
+            if(keyMaterial.isEmpty() && getUserKeyPath() == null) {
+                _launchpad.reportError("Unable to find a private key in the applet parameters.", null);
             }
         }
 
@@ -396,7 +398,14 @@ public class LaunchpadApplet
         }
 
         try {
-            if( isAttemptNative() ) {
+            if( getUserKeyPath() != null && !hasUserKeyFile() && !hasUserPuttyKeyFile() ) {
+                //We can't find the user's local key file -- just give up!
+                _hadFailure = true;
+                setDisplayState(MISSING_KEY);
+                return false;
+            }
+            else if( isAttemptNative() ) {
+                //We can't invoke the native client
                 setDisplayState(FORCED_MINDTERM);
             }
             else {
@@ -416,7 +425,13 @@ public class LaunchpadApplet
     private void choose_()
             throws IOException
     {
-        if( _launchpad.isNativeClientAvailable() ) {
+
+        if( getUserKeyPath() != null && !hasUserKeyFile() && !hasUserPuttyKeyFile() ) {
+            //We can't find the user's local key file -- just give up!
+            _hadFailure = true;
+            setDisplayState(MISSING_KEY);
+        }
+        else if( _launchpad.isNativeClientAvailable() ) {
             setDisplayState(CHOOSING);
         }
         else {
@@ -484,7 +499,8 @@ public class LaunchpadApplet
         Container pnlChoosing       = createChoosingUI(),
                   pnlUsingNative    = createUsingNativeUI(),
                   pnlUsingMindterm  = createUsingMindtermUI(),
-                  pnlForcedMindterm = createForcedMindtermUI();
+                  pnlForcedMindterm = createForcedMindtermUI(),
+                  pnlMissingKey     = createMissingKeyUI();
 
         //Add all of the initialized panels to the main (CardLayout) panel
         _pnlMain = createPanel();
@@ -493,6 +509,7 @@ public class LaunchpadApplet
         _pnlMain.add(pnlUsingNative, USING_NATIVE);
         _pnlMain.add(pnlUsingMindterm, USING_MINDTERM);
         _pnlMain.add(pnlForcedMindterm, FORCED_MINDTERM);
+        _pnlMain.add(pnlMissingKey, MISSING_KEY);
 
         //Add the main and header panels to ourself
         this.setLayout(new BorderLayout());
@@ -610,6 +627,45 @@ public class LaunchpadApplet
         return pnl;
     }
 
+    private Container createMissingKeyUI() {
+        JPanel pnl = createPanel();
+        Box pnlCenter = Box.createVerticalBox();
+
+        JLabel lbl = new JLabel("Cannot locate the private key file");
+        lbl.setAlignmentX(JComponent.CENTER_ALIGNMENT);
+        pnlCenter.add(lbl);
+
+        String path = null;
+        try {
+            path = getUserKeyFile().getCanonicalPath();
+        }
+        catch(IOException e) {
+            path = getUserKeyPath();
+        }
+
+        lbl = new JLabel(path);
+        lbl.setAlignmentX(JComponent.CENTER_ALIGNMENT);
+        pnlCenter.add(lbl);
+
+        pnlCenter.add(Box.createRigidArea(new Dimension(1, 16)));
+        
+        lbl = new JLabel("Please change your SSH settings or create the file mentioned above.");
+        lbl.setAlignmentX(JComponent.CENTER_ALIGNMENT);
+        lbl.setForeground(Color.RED);
+        pnlCenter.add(lbl);
+
+        if(getTroubleshootingLink() != null) {
+            pnlCenter.add(Box.createRigidArea(new Dimension(1, 16)));
+            Box pnlButtons = Box.createHorizontalBox();
+            pnlButtons.add(new JButton(_actTroubleshoot));
+            pnlCenter.add(pnlButtons);
+        }
+
+        pnl.setLayout(new BorderLayout());
+        pnl.add(pnlCenter, BorderLayout.CENTER);
+        return pnl;
+    }
+    
     ////
     //// Overridden superclass methods used to keep MindTerm from trashing
     //// our components and layout.
