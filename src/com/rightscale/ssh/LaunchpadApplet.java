@@ -157,6 +157,15 @@ public class LaunchpadApplet
         return getParameter("server-uuid");
     }
 
+    protected String getServerName() {
+        String v = getParameter("server-name");
+
+        if(v != null)
+            return v;
+        else
+            return getServer();
+    }
+
     protected String getAuthMethod() {
         if("publickey".equals(getParameter("auth-method")))
             return AUTH_METHOD_PUBLIC_KEY;
@@ -306,7 +315,7 @@ public class LaunchpadApplet
         
         Map keyMaterial = new HashMap();
 
-        if( getAuthMethod() == AUTH_METHOD_PUBLIC_KEY ) {
+        if( getAuthMethod().equals(AUTH_METHOD_PUBLIC_KEY) ) {
             if( getUserKeyPath() != null && hasUserKeyFile() ) {
                 keyMaterial.put( new Integer(Launcher.OPENSSH_KEY_FORMAT), getUserKeyMaterial() );
             }
@@ -315,7 +324,7 @@ public class LaunchpadApplet
             }
             else {
                 boolean why = getUserKeyPath() != null && hasUserKeyFile();
-                System.out.println("OpenSSH key material not found (" + why + ")");
+                System.out.println("OpenSSH key material not found (path&file=" + why + ")");
             }
 
             if( getUserKeyPath() != null && hasUserPuttyKeyFile() ) {
@@ -326,12 +335,16 @@ public class LaunchpadApplet
             }
             else {
                 boolean why = getUserKeyPath() != null && hasUserPuttyKeyFile();
-                System.out.println("PuTTY key material not found (" + why + ")");
+                System.out.println("PuTTY key material not found (path&file=" + why + ")");
             }
 
             if(keyMaterial.isEmpty() && getUserKeyPath() == null) {
                 _launchpad.reportError("Unable to find a private key in the applet parameters.", null);
             }
+        }
+
+        if(getPassword() != null && getPassword().length() > 0) {
+            _launchpad.setPassword(getPassword());
         }
 
         //Initialize the launchpad business logic
@@ -340,9 +353,6 @@ public class LaunchpadApplet
         _launchpad.setServerUUID(getServerUUID());
         _launchpad.setKeyMaterial(keyMaterial);
         _launchpad.init();
-        if(getPassword() != null && getPassword().length() > 0) {
-            _launchpad.setPassword(getPassword());
-        }
 
         //Fix up the "use native client" button's text for friendlier UI
         if(_launchpad.isNativeClientAvailable()) {
@@ -493,7 +503,7 @@ public class LaunchpadApplet
 
     private void initUI() {
         //A header that is shared between all display states
-        Container header           = createHeaderUI();
+        Container header            = createHeaderUI();
 
         //One panel for each display state the applet can be in
         Container pnlChoosing       = createChoosingUI(),
@@ -529,7 +539,7 @@ public class LaunchpadApplet
         JLabel lbl = new JLabel( "Connecting to" );
         lbl.setAlignmentX(JComponent.CENTER_ALIGNMENT);
         pnl.add(lbl);
-        lbl = new JLabel( getServer() );
+        lbl = new JLabel( getServerName() );
         lbl.setAlignmentX(JComponent.CENTER_ALIGNMENT);
         pnl.add(lbl);
         pnl.add(Box.createRigidArea(new Dimension(1, 16)));
@@ -640,7 +650,12 @@ public class LaunchpadApplet
             path = getUserKeyFile().getCanonicalPath();
         }
         catch(IOException e) {
+            //If we can't even find the canonical path of the file...
             path = getUserKeyPath();
+        }
+        catch(NullPointerException e) {
+            //If no user key file was specified
+            path = "(unknown)";
         }
 
         lbl = new JLabel(path);

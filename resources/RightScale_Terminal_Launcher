@@ -1,19 +1,19 @@
 #!/usr/bin/osascript
 
 on run argv
-    set AppleScript's text item delimiters to " "
-    set cmd to (argv as text)
+	set AppleScript's text item delimiters to " "
+	set cmd to (argv as text)
 
-    tell application "Terminal" to activate
-    delay 1.5
-    tell application "System Events" to tell process "Terminal" to keystroke "t" using command down
+	tell application "Terminal" to activate
 
-    tell application "Terminal"
-        tell window 0 to tell selected tab to tell current settings
-            set clean commands to ["ssh", "login", "bash"]
+	tell application "Terminal"
+		tell application "System Events" to tell process "Terminal" to keystroke "t" using command down
+
+		tell front window to tell selected tab to tell current settings
+			set clean commands to ["ssh", "login", "bash"]
+		end tell
+
+		do script with command "~/.rightscale/RightScale_SSH_Wrapper " & cmd & " ; logout" in front window
 	end tell
-
-	do script with command "~/.rightscale/RightScale_SSH_Wrapper " & cmd & " ; logout" in window 0
-    end tell
 
 end run
