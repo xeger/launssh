@@ -12,7 +12,7 @@ on run argv
 			set sess to (make new session)
 			tell sess
 				set name to "RightScale SSH"
-				exec command "~/.rightscale/RightScale_SSH_Wrapper " & cmd
+				exec command cmd
 			end tell
 		end tell
 	end tell

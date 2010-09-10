@@ -1,7 +1,0 @@
-#!/bin/bash
-
-ssh $@ && exit
-
-read -p 'Press enter to continue...'
-clear
-exit

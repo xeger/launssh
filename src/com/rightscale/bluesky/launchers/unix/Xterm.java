@@ -1,11 +1,11 @@
-package com.rightscale.ssh.launchers.unix;
+package com.rightscale.bluesky.launchers.unix;
 
-import com.rightscale.ssh.*;
-import com.rightscale.ssh.launchers.*;
+import com.rightscale.bluesky.*;
+import com.rightscale.bluesky.launchers.*;
 import java.io.*;
 
 public class Xterm extends SimpleUnixLauncher {
-    public Xterm(Launchpad launchpad) {
+    public Xterm(CommandRunner launchpad) {
         super(launchpad, "xterm -h", "xterm -e");
 
         if( isPlatform("Mac") ) {

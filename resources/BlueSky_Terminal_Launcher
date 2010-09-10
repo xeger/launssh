@@ -8,12 +8,7 @@ on run argv
 
 	tell application "Terminal"
 		tell application "System Events" to tell process "Terminal" to keystroke "t" using command down
-
-		tell front window to tell selected tab to tell current settings
-			set clean commands to ["ssh", "login", "bash"]
-		end tell
-
-		do script with command "~/.rightscale/RightScale_SSH_Wrapper " & cmd & " ; logout" in front window
+		do script with command cmd in front window
 	end tell
 
 end run
