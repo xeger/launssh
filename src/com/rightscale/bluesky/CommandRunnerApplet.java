@@ -76,20 +76,17 @@ public class CommandRunnerApplet
     //// Properties and accessors.
     ////
 
-    protected String getCommands() {
-        String commands = getParameter("commands");
-        commands = commands.replace('*', '\n');
-        return commands;
-    }
-
     protected String getUserdata() {
         String userdata = getParameter("userdata");
         userdata = userdata.replace('*', '\n');
         return userdata;
     }
 
-    protected File getScriptFile() {
-        return new File(_launchpad.getSafeDirectory(), "bluesky_launch.sh");
+    protected File getScriptFile()
+        throws IOException
+    {
+        //TODO account for Windows
+        return new File(_launchpad.getSafeDirectory(), "BlueSky_Installer.sh").getCanonicalFile();
     }
 
     ////
@@ -125,8 +122,8 @@ public class CommandRunnerApplet
         public void actionPerformed(ActionEvent evt) {
             try {
                 System.err.println("Writing script file to " + getScriptFile().getAbsolutePath());
-                FileUtils.writeText(getCommands(), getScriptFile());
-                System.err.println("Wrote " + getCommands().length() + " bytes");
+                //TODO account for Windows
+                FileUtils.writeResource(this.getClass(), "/BlueSky_Installer.sh", getScriptFile());
                 _launchpad.runHeadless("chmod 0700 " + getScriptFile().getAbsolutePath());
                 System.err.println("Changed mode of script file to 0700");
 
