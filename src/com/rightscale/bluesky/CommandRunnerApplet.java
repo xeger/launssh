@@ -130,7 +130,7 @@ public class CommandRunnerApplet
                 File userDataFile = new File(_launchpad.getSafeDirectory(), "user-data.txt");
                 FileUtils.writeText(getUserdata(), userDataFile);
                 
-                _launchpad.run("sudo mkdir -p /var/spool/generic && sudo cp " + userDataFile.getCanonicalPath() +  " /var/spool/generic && sudo " + getScriptFile().getAbsolutePath());
+                _launchpad.run("sudo " + getScriptFile().getAbsolutePath() + " ; read -p 'Press a key...' dontcare");
             }
             catch(IOException e) {
                 _launchpad.reportError("FALL DOWN GO BOOM. :(", e);

@@ -1,5 +1,9 @@
-#!/bin/bash
+#!/bin/bash -x
 
+mkdir -p /var/spool/generic
+cp $HOME/.rightscale/user-data.txt /var/spool/generic
+
+#Install necessary packages
 `which apt-get`
 if [ $? == 0 ]; then
     apt-get install -y ruby rubygems rake epos irb git-core ruby1.8-dev build-essential libopenssl-ruby1.8
@@ -15,9 +19,9 @@ fi
 
 #use curl to download tarball from S3
 CODE=500
-while [ &quot;$CODE&quot; -ge &quot;500&quot; ]; do
+while [ "$CODE" -ge "500" ]; do
   CODE=`curl -s -S -f -L --retry 7 -w '%{http_code}' -o /tmp/blueskies.tgz http://s3.amazonaws.com/rightscale_rightlink_dev/rightscale_right_link_blueskies.tgz`
-  echo &quot;Downloading $TARBALL_NAME - curl returned code: $CODE&quot;
+  echo "Downloading $TARBALL_NAME - curl returned code: $CODE"
 done
 
 #chdir to /opt and extract tarball
@@ -26,4 +30,4 @@ tar zxf /tmp/blueskies.tgz
 
 #run the BlueSkies post-install script
 chmod a+x /opt/rightscale/bin/post_install_nocloud.sh
-exec /opt/rightscale/bin/post_install_nocloud.sh
+/opt/rightscale/bin/post_install_nocloud.sh
