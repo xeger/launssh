@@ -1,0 +1,46 @@
+<project default="compile">
+
+  <!-- modify these to your liking -->
+  <property name="keystore.path" value="some/keystore" />
+  <property name="keystore.password" value="mypa$$w0RD123" />
+  <property name="keystore.alias" value="somekeyalias" />
+  <!-- modify these to your liking -->
+
+  <property name="src.dir" value="src"/>
+  <property name="build.dir" value="build"/>
+  <property name="classes.dir" value="${build.dir}/classes"/>
+  <property name="jar.dir" value="${build.dir}/jar"/>
+  <property name="jar.launssh" value="${jar.dir}/launssh.jar"/>
+  <property name="resources.dir" value="resources"/>
+
+  <target name="clean">
+    <delete dir="${build.dir}"/>
+  </target>
+
+  <target name="compile">
+    <mkdir dir="${build.dir}"/>
+    <mkdir dir="${classes.dir}"/>
+    <copy todir="${classes.dir}">
+      <fileset dir="${resources.dir}"/>
+    </copy>
+    <javac srcdir="${src.dir}" destdir="${classes.dir}"/>
+  </target>
+
+  <target name="jar">
+    <mkdir dir="${build.dir}"/>
+    <mkdir dir="${jar.dir}"/>
+    <jar destfile="${jar.launssh}" basedir="${classes.dir}">
+      <manifest>
+        <attribute name="Trusted-Only" value="true"/>
+      </manifest>
+    </jar>
+  </target>
+
+  <target name="sign">
+    <signjar jar="${jar.launssh}"
+      keystore="${keystore.path}"
+      storepass="${keystore.password}"
+      alias="${keystore.alias}"
+      tsaurl="http://tsa.starfieldtech.com"/>
+  </target>
+</project>
