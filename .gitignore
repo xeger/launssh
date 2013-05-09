@@ -8,4 +8,5 @@ dist/*
 cert/*
 build/*
 integration/launssh.jar
-
+codesign
+build.xml
