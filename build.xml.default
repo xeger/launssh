@@ -3,7 +3,8 @@
   <!-- modify these to your liking -->
   <property name="keystore.path" value="some/keystore" />
   <property name="keystore.password" value="mypa$$w0RD123" />
-  <property name="keystore.alias" value="somekeyalias" />
+  <property name="key.alias" value="somekeyalias" />
+  <property name="key.password" value="myOtherP@ssw0rd" />
   <!-- modify these to your liking -->
 
   <property name="src.dir" value="src"/>
@@ -23,7 +24,7 @@
     <copy todir="${classes.dir}">
       <fileset dir="${resources.dir}"/>
     </copy>
-    <javac srcdir="${src.dir}" destdir="${classes.dir}"/>
+    <javac srcdir="${src.dir}" destdir="${classes.dir}" target="1.5"/>
   </target>
 
   <target name="jar">
@@ -32,6 +33,7 @@
     <jar destfile="${jar.launssh}" basedir="${classes.dir}">
       <manifest>
         <attribute name="Trusted-Only" value="true"/>
+        <attribute name="Permissions" value="all-permissions"/>
       </manifest>
     </jar>
   </target>
@@ -40,7 +42,8 @@
     <signjar jar="${jar.launssh}"
       keystore="${keystore.path}"
       storepass="${keystore.password}"
-      alias="${keystore.alias}"
+      keypass="${key.password}"
+      alias="${key.alias}"
       tsaurl="http://tsa.starfieldtech.com"/>
   </target>
 </project>
