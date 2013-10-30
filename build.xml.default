@@ -32,6 +32,7 @@
     <jar destfile="${jar.launssh}" basedir="${classes.dir}">
       <manifest>
         <attribute name="Trusted-Only" value="true"/>
+        <attribute name="Permissions" value="all-permissions"/>
       </manifest>
     </jar>
   </target>
