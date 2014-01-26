@@ -1,6 +1,5 @@
 package com.rightscale.ssh;
 
-import com.rightscale.ssh.launchers.Launcher;
 import com.rightscale.ssh.*;
 import com.rightscale.util.*;
 import com.rightscale.ssh.launchers.*;
@@ -13,26 +12,21 @@ import javax.swing.*;
 import java.net.*;
 import java.io.*;
 import java.util.*;
-import java.applet.Applet;
-import java.applet.AppletStub;
 import java.security.*;
 
 public class LaunchpadApplet
-        extends Applet
-        implements AppletStub
+        extends java.applet.Applet
+        implements java.applet.AppletStub, com.rightscale.ssh.UI
 {
     public static final String AUTH_METHOD_PUBLIC_KEY = "publickey";
     public static final String AUTH_METHOD_PASSWORD   = "password";
     
     public static final String CHOOSING        = "choosing";
-    public static final String USING_MINDTERM  = "usingMindterm";
-    public static final String FORCED_MINDTERM = "forcedMindterm";
     public static final String USING_NATIVE    = "usingNative";
     public static final String MISSING_KEY     = "missingKey";
 
-    private SimpleLaunchpad      _launchpad   = new SimpleLaunchpad();
+    private Launchpad            _launchpad   = new Launchpad(this);
     private boolean              _ranNative   = false;
-    private boolean              _ranMindterm = false;
     private boolean              _hadFailure  = false;
     
     ////
@@ -43,10 +37,6 @@ public class LaunchpadApplet
         return _ranNative;
     }
 
-    public boolean ranMindterm() {
-        return _ranMindterm;
-    }
-    
     public boolean hadFailure() {
         return _hadFailure;
     }
@@ -77,7 +67,7 @@ public class LaunchpadApplet
             });
         }
         catch(PrivilegedActionException e) {
-            _launchpad.reportError("Failed to acquire the privilege necessary to initialize the applet.", e);
+            log("Failed to acquire the privilege necessary to initialize the applet.", e);
         }
     }
 
@@ -94,7 +84,7 @@ public class LaunchpadApplet
             });
         }
         catch(PrivilegedActionException e) {
-            _launchpad.reportError("Failed to acquire the privilege necessary to initialize the applet.", e);
+            log("Failed to acquire the privilege necessary to initialize the applet.", e);
         }
     }
 
@@ -311,7 +301,7 @@ public class LaunchpadApplet
 
     private void init_()
     {
-        _ranNative = _ranMindterm = _hadFailure = false;
+        _ranNative = _hadFailure = false;
         
         Map keyMaterial = new HashMap();
 
@@ -339,7 +329,7 @@ public class LaunchpadApplet
             }
 
             if(keyMaterial.isEmpty() && getUserKeyPath() == null) {
-                _launchpad.reportError("Unable to find a private key in the applet parameters.", null);
+                log("Unable to find a private key in the applet parameters.", null);
             }
         }
 
@@ -352,14 +342,10 @@ public class LaunchpadApplet
         _launchpad.setServer(getServer());
         _launchpad.setServerUUID(getServerUUID());
         _launchpad.setKeyMaterial(keyMaterial);
-        _launchpad.init();
 
         //Fix up the "use native client" button's text for friendlier UI
         if(_launchpad.isNativeClientAvailable()) {
-            _actRunNative.putValue(_actRunNative.NAME, "Use " + _launchpad.getNativeClientName());
-        }
-        else {
-            _lblForcedMindtermReason.setText(_launchpad.getNativeClientStatus());
+            _actrun.putValue(_actrun.NAME, "Use " + _launchpad.getNativeClientName());
         }
 
         //Initialize the UI (only if we haven't already done it)
@@ -381,7 +367,7 @@ public class LaunchpadApplet
             }
         }
         catch(IOException e) {
-            _launchpad.reportError("Encountered an error while invoking the SSH client.", e);
+            log("Encountered an error while invoking the SSH client.", e);
         }
     }
 
@@ -395,38 +381,12 @@ public class LaunchpadApplet
         if( isAttemptNative() ) {
             try {
                 setDisplayState(USING_NATIVE);
-                _ranNative = didLaunch = _launchpad.runNative();
+                _ranNative = didLaunch = _launchpad.run();
             }
             catch(IOException e) {
                 didLaunch = false;
-                _launchpad.reportError("Could not invoke your system's SSH client.", e);
+                log("Could not invoke your system's SSH client.", e);
             }
-        }
-
-        if(didLaunch) {
-            return true;
-        }
-
-        try {
-            if( getUserKeyPath() != null && !hasUserKeyFile() && !hasUserPuttyKeyFile() ) {
-                //We can't find the user's local key file -- just give up!
-                _hadFailure = true;
-                setDisplayState(MISSING_KEY);
-                return false;
-            }
-            else if( isAttemptNative() ) {
-                //We can't invoke the native client
-                setDisplayState(FORCED_MINDTERM);
-            }
-            else {
-                setDisplayState(USING_MINDTERM);
-            }
-
-            _ranMindterm = didLaunch = _launchpad.runMindterm(this, this);
-        }
-        catch(IOException e) {
-            didLaunch = false;
-            _launchpad.reportError("Could not invoke the MindTerm SSH applet.\nSorry, we can't connect you right now!", e);
         }
 
         return didLaunch;
@@ -444,10 +404,6 @@ public class LaunchpadApplet
         else if( _launchpad.isNativeClientAvailable() ) {
             setDisplayState(CHOOSING);
         }
-        else {
-            setDisplayState(FORCED_MINDTERM);
-            _ranMindterm = _launchpad.runMindterm(this, this);
-        }
     }
 
     ////
@@ -457,10 +413,6 @@ public class LaunchpadApplet
     boolean        _initialized = false;
     JPanel         _pnlMain     = null;
 
-    JLabel _lblForcedMindtermReason =
-        new JLabel( "Could not invoke your system's SSH client.");
-
-    
     Action _actTroubleshoot = new AbstractAction("Troubleshoot") {
         public void actionPerformed(ActionEvent evt) {
             URL url = getTroubleshootingLink();
@@ -470,26 +422,14 @@ public class LaunchpadApplet
         }
     };
 
-    Action _actRunNative = new AbstractAction("Use Native") {
+    Action _actrun = new AbstractAction("Use Native") {
         public void actionPerformed(ActionEvent evt) {
             try {
-                _ranNative = _launchpad.runNative();
+                _ranNative = _launchpad.run();
                 setDisplayState(USING_NATIVE);
             }
             catch(IOException e) {
-                _launchpad.reportError("Could not invoke your computer's SSH application.", e);
-            }
-        }
-    };
-
-    Action _actRunMindterm = new AbstractAction("Use Mindterm") {
-        public void actionPerformed(ActionEvent evt) {
-            try {
-                _ranMindterm = _launchpad.runMindterm(LaunchpadApplet.this, LaunchpadApplet.this);
-                setDisplayState(USING_MINDTERM);
-            }
-            catch(IOException e) {
-                _launchpad.reportError("Could not invoke MindTerm.", e);
+                log("Could not invoke your computer's SSH application.", e);
             }
         }
     };
@@ -508,8 +448,6 @@ public class LaunchpadApplet
         //One panel for each display state the applet can be in
         Container pnlChoosing       = createChoosingUI(),
                   pnlUsingNative    = createUsingNativeUI(),
-                  pnlUsingMindterm  = createUsingMindtermUI(),
-                  pnlForcedMindterm = createForcedMindtermUI(),
                   pnlMissingKey     = createMissingKeyUI();
 
         //Add all of the initialized panels to the main (CardLayout) panel
@@ -517,8 +455,6 @@ public class LaunchpadApplet
         _pnlMain.setLayout(new CardLayout());
         _pnlMain.add(pnlChoosing, CHOOSING);
         _pnlMain.add(pnlUsingNative, USING_NATIVE);
-        _pnlMain.add(pnlUsingMindterm, USING_MINDTERM);
-        _pnlMain.add(pnlForcedMindterm, FORCED_MINDTERM);
         _pnlMain.add(pnlMissingKey, MISSING_KEY);
 
         //Add the main and header panels to ourself
@@ -555,8 +491,7 @@ public class LaunchpadApplet
         lbl.setFont(lbl.getFont().deriveFont(Font.BOLD));
         lbl.setAlignmentX(JComponent.CENTER_ALIGNMENT);
         pnlCenter.add(lbl);
-        pnlButtons.add(new JButton(_actRunNative));
-        pnlButtons.add(new JButton(_actRunMindterm));
+        pnlButtons.add(new JButton(_actrun));
         pnlCenter.add(pnlButtons);
         pnl.setLayout(new BorderLayout());
         pnl.add(pnlCenter, BorderLayout.CENTER);
@@ -571,67 +506,11 @@ public class LaunchpadApplet
         JLabel lbl = new JLabel( _launchpad.getNativeClientName() + " will launch in a separate window." );
         lbl.setAlignmentX(JComponent.CENTER_ALIGNMENT);
         pnlCenter.add(lbl);
-        lbl = new JLabel( "If you encounter problems, use MindTerm instead." );
-        lbl.setAlignmentX(JComponent.CENTER_ALIGNMENT);
-        pnlCenter.add(lbl);
         pnlCenter.add(Box.createRigidArea(new Dimension(1, 16)));
-        JButton btnRunNative = new JButton(_actRunNative);
-                btnRunNative.setText("New Session");
-        pnlButtons.add(btnRunNative);
-        pnlButtons.add(new JButton(_actRunMindterm));
+        JButton btnrun = new JButton(_actrun);
+                btnrun.setText("New Session");
+        pnlButtons.add(btnrun);
         pnlCenter.add(pnlButtons);
-        pnl.setLayout(new BorderLayout());
-        pnl.add(pnlCenter, BorderLayout.CENTER);
-        return pnl;
-    }
-
-    private Container createUsingMindtermUI() {
-        JPanel pnl = createPanel();
-        Box pnlCenter = Box.createVerticalBox();
-        JLabel lbl = new JLabel( "Using MindTerm pure-Java SSH client.");
-        lbl.setAlignmentX(JComponent.CENTER_ALIGNMENT);
-        pnlCenter.add(lbl);
-        lbl = new JLabel( "Session will display in a separate window.");
-        lbl.setAlignmentX(JComponent.CENTER_ALIGNMENT);
-        pnlCenter.add(lbl);
-        pnlCenter.add(Box.createRigidArea(new Dimension(1, 16)));
-        lbl = new JLabel( "This window must stay open while using SSH.");
-        lbl.setFont(lbl.getFont().deriveFont(Font.BOLD));
-        lbl.setForeground(Color.RED);
-        lbl.setAlignmentX(JComponent.CENTER_ALIGNMENT);
-        pnlCenter.add(lbl);
-        pnl.setLayout(new BorderLayout());
-        pnl.add(pnlCenter, BorderLayout.CENTER);
-        return pnl;
-    }
-
-    private Container createForcedMindtermUI() {
-        JPanel pnl = createPanel();
-        Box pnlCenter = Box.createVerticalBox();
-
-        _lblForcedMindtermReason.setAlignmentX(JComponent.CENTER_ALIGNMENT);
-        pnlCenter.add(_lblForcedMindtermReason);
-        JLabel lbl = null;
-        lbl = new JLabel( "Using MindTerm instead.");
-        lbl.setAlignmentX(JComponent.CENTER_ALIGNMENT);
-        pnlCenter.add(lbl);
-        lbl = new JLabel( "Session will display in a separate window.");
-        lbl.setAlignmentX(JComponent.CENTER_ALIGNMENT);
-        pnlCenter.add(lbl);
-        pnlCenter.add(Box.createRigidArea(new Dimension(1, 16)));
-        lbl = new JLabel( "This window must stay open while using SSH.");
-        lbl.setFont(lbl.getFont().deriveFont(Font.BOLD));
-        lbl.setForeground(Color.RED);
-        lbl.setAlignmentX(JComponent.CENTER_ALIGNMENT);
-        pnlCenter.add(lbl);
-
-        if(getTroubleshootingLink() != null) {
-            pnlCenter.add(Box.createRigidArea(new Dimension(1, 16)));
-            Box pnlButtons = Box.createHorizontalBox();
-            pnlButtons.add(new JButton(_actTroubleshoot));
-            pnlCenter.add(pnlButtons);
-        }
-
         pnl.setLayout(new BorderLayout());
         pnl.add(pnlCenter, BorderLayout.CENTER);
         return pnl;
@@ -682,31 +561,15 @@ public class LaunchpadApplet
     }
     
     ////
-    //// Overridden superclass methods used to keep MindTerm from trashing
-    //// our components and layout.
+    //// Implementation of com.rightscale.ssh.UI
     ////
 
-    @Override
-    public void setLayout(LayoutManager layout) {
-        if(!_initialized) {
-            super.setLayout(layout);
-        }
+    public void log(String message) {
+        System.out.println(message);
     }
 
-    @Override
-    public Component add(Component comp) {
-        if(!_initialized) {
-            return super.add(comp);
-        }
-        else {
-            return comp;
-        }
+    public void log(String message, Throwable problem) {
+        System.out.println(message);
     }
 
-    @Override
-    public void add(Component comp, Object constraints) {
-        if(!_initialized) {
-            super.add(comp, constraints);
-        }
-    }
 }

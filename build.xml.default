@@ -27,7 +27,7 @@
     <javac srcdir="${src.dir}" destdir="${classes.dir}" target="1.5"/>
   </target>
 
-  <target name="jar">
+  <target name="jar" depends="compile">
     <mkdir dir="${build.dir}"/>
     <mkdir dir="${jar.dir}"/>
     <jar destfile="${jar.launssh}" basedir="${classes.dir}">
