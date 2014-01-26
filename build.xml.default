@@ -1,7 +1,7 @@
 <project default="compile">
 
   <!-- modify these to your liking -->
-  <property name="keystore.path" value="some/keystore" />
+  <property name="keystore.path" value="${user.home}/.keystore" />
   <property name="keystore.password" value="mypa$$w0RD123" />
   <property name="key.alias" value="somekeyalias" />
   <property name="key.password" value="myOtherP@ssw0rd" />
@@ -13,6 +13,8 @@
   <property name="jar.dir" value="${build.dir}/jar"/>
   <property name="jar.launssh" value="${jar.dir}/launssh.jar"/>
   <property name="resources.dir" value="resources"/>
+
+  <property name="classpath" value="${java.home}/jre/lib/javaws.jar"/>
 
   <target name="clean">
     <delete dir="${build.dir}"/>

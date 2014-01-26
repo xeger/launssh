@@ -3,7 +3,6 @@ package com.rightscale.ssh;
 import com.rightscale.ssh.*;
 import com.rightscale.util.*;
 import com.rightscale.ssh.launchers.*;
-import com.rightscale.ssh.launchers.java.*;
 
 import java.lang.reflect.*;
 import java.awt.*;
@@ -14,7 +13,7 @@ import java.io.*;
 import java.util.*;
 import java.security.*;
 
-public class LaunchpadApplet
+public class Applet
         extends java.applet.Applet
         implements java.applet.AppletStub, com.rightscale.ssh.UI
 {
@@ -417,7 +416,7 @@ public class LaunchpadApplet
         public void actionPerformed(ActionEvent evt) {
             URL url = getTroubleshootingLink();
             if(url != null) {
-                LaunchpadApplet.this.getAppletContext().showDocument(url, "_blank");
+                Applet.this.getAppletContext().showDocument(url, "_blank");
             }
         }
     };

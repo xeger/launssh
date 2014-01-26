@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<jnlp spec="1.0+" codebase="http://localhost:3000" href="launssh.jnlp">
+    <information>
+        <title>SSH Launcher</title>
+        <vendor>Tony Spataro</vendor>
+        <icon href="http://static.pmylund.com/blog/content/2010/02/konsole.png"/>
+    </information>
+    <security>
+       <all-permissions/>
+    </security>    
+    <resources>
+        <j2se version="1.6+" />
+        <jar href="launssh.jar" main="true" />
+    </resources>
+    <application-desc
+         name="SSH Launcher"
+         main-class="com.rightscale.ssh.Application"
+         width="300"
+         height="300">
+     </application-desc>
+     <update check="background"/>
+</jnlp>

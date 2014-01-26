@@ -3,7 +3,6 @@ package com.rightscale.ssh;
 import com.rightscale.ssh.launchers.Launcher;
 import com.rightscale.ssh.*;
 import com.rightscale.ssh.launchers.*;
-import com.rightscale.ssh.launchers.java.*;
 
 import java.lang.reflect.*;
 import java.awt.*;
@@ -43,7 +42,6 @@ public class Launchpad
     private String               _password    = null;
     private ArrayList            _launchers   = new ArrayList();
     private String               _nativeClientStatus = null;
-    private Mindterm             _mindterm    = null;
     private Set                  _requiredKeys= new HashSet();
     private Map                  _writtenKeys = new HashMap();
 

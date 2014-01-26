@@ -5,7 +5,10 @@
     <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
   </head>
   <body>
-    <applet archive="launssh.jar,mindterm.signed.jar"
+    <h1>Application</h1>
+    <a href="launssh.jnlp">launssh via Java Web Start</a>
+    <h1>Applet</h1>
+    <applet archive="launssh.jar"
             code="com.rightscale.ssh.LaunchpadApplet"
             width="100%"
             height="100%"
@@ -14,7 +17,7 @@
             id="launssh">
        Java SSH launchpad.
 
-       <!-- Params that are relevant to Launchpad and MindTerm -->
+       <!-- Params that are relevant to Launchpad -->
        <param name="server" value="home.xeger.net" />
        <param name="username" value="tony">
 
@@ -36,26 +39,6 @@
        <param name="user-key-path" value=".ssh/FOOBAR">
 -->
        <param name="troubleshooting-url" value="http://www.google.com" />
-
-       <!-- Params that are only relevant to MindTerm -->
-       <param name="private-key" value="some_key_name_for_mindterm_key_file">
-       <param name='debug' value='false' />
-       <param name='sepframe' value='true' />
-       <param name="verbose" value="true" />
-
-       <param name='protocol' value='ssh2' />
-       <param name='quiet' value='true' />
-       <param name='port' value='22' />
-       <param name='alive' value='60' />
-
-       <param name='80x132-enable' value='true' />
-       <param name='80x132-toggle' value='true' />
-       <param name='bg-color' value='black' />
-       <param name='fg-color' value='white' />
-       <param name='cursor-color' value='i_green' />
-       <param name="geometry" value="80x40" />
-       <param name="font-name" value="Courier" />
-       <param name="font-size" value="14" />
     </applet>
   </body>
 </html>
