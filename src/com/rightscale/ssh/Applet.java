@@ -306,10 +306,10 @@ public class Applet
 
         if( getAuthMethod().equals(AUTH_METHOD_PUBLIC_KEY) ) {
             if( getUserKeyPath() != null && hasUserKeyFile() ) {
-                keyMaterial.put( new Integer(Launcher.OPENSSH_KEY_FORMAT), getUserKeyMaterial() );
+                keyMaterial.put( Launcher.OPENSSH_KEY_FORMAT, getUserKeyMaterial() );
             }
             else if( getServerKeyMaterial() != null ) {
-                keyMaterial.put( new Integer(Launcher.OPENSSH_KEY_FORMAT), getServerKeyMaterial() );
+                keyMaterial.put( Launcher.OPENSSH_KEY_FORMAT, getServerKeyMaterial() );
             }
             else {
                 boolean why = getUserKeyPath() != null && hasUserKeyFile();
@@ -317,10 +317,10 @@ public class Applet
             }
 
             if( getUserKeyPath() != null && hasUserPuttyKeyFile() ) {
-                keyMaterial.put( new Integer(Launcher.PUTTY_KEY_FORMAT), getUserPuttyKeyMaterial() );
+                keyMaterial.put( Launcher.PUTTY_KEY_FORMAT, getUserPuttyKeyMaterial() );
             }
             if( getServerPuttyKeyMaterial() != null ) {
-                keyMaterial.put( new Integer(Launcher.PUTTY_KEY_FORMAT), getServerPuttyKeyMaterial() );
+                keyMaterial.put( Launcher.PUTTY_KEY_FORMAT, getServerPuttyKeyMaterial() );
             }
             else {
                 boolean why = getUserKeyPath() != null && hasUserPuttyKeyFile();
@@ -344,7 +344,7 @@ public class Applet
 
         //Fix up the "use native client" button's text for friendlier UI
         if(_launchpad.isNativeClientAvailable()) {
-            _actrun.putValue(_actrun.NAME, "Use " + _launchpad.getNativeClientName());
+            _actrun.putValue(_actrun.NAME, "Launch " + _launchpad.getNativeClientName());
         }
 
         //Initialize the UI (only if we haven't already done it)
@@ -421,7 +421,7 @@ public class Applet
         }
     };
 
-    Action _actrun = new AbstractAction("Use Native") {
+    Action _actrun = new AbstractAction("Launch SSH") {
         public void actionPerformed(ActionEvent evt) {
             try {
                 _ranNative = _launchpad.run();

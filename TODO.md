@@ -2,7 +2,20 @@ TODO
 
 = Finish proof of concept
 
-Get the Applescript launcher working (there's something wrong with the key material, user key file, etc)
+fix some applet warnings:
+security: Missing Codebase manifest attribute for: http://localhost:3000/launssh.jar
+security: Missing Application-Library-Allowable-Codebase manifest attribute for: http://localhost:3000/launssh.jar
+
+= De-brand
+
+Distinguish between safe dir (for application-related scripts, etc) and SSH preferences dir (for private keys, host config, etc)
+Launcher owns preferences dir; launchpad owns safe dir!
+
+Remove references to "rightscale" in hardcoded paths. Choose more reasonable/suitable hardcoded names.
+
+Change package and class names to remove RightScale affiliation.
+
+Add license header to all source files.
 
 = Command-Line Interface
 
@@ -13,15 +26,6 @@ launssh [--alias=foo] user@hostname [<base64 public key>]
 
 # import a private key file to safe directory; set permissions suitably
 launssh <base64 ppk file or OpenSSH private key block>
-
-= De-brand
-
-Distinguish between safe dir (for application-related scripts, etc) and SSH preferences dir (for private keys, host config, etc)
-Launcher owns preferences dir; launchpad owns safe dir!
-
-Remove references to "rightscale" in hardcoded paths. Choose more reasonable/suitable hardcoded names.
-
-Change package and class names to remove RightScale affiliation.
 
 = Preferences Dialog
 

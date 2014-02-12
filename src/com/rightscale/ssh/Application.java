@@ -56,29 +56,32 @@ public class Application
     public boolean run()
         throws IOException
     {
-        Map keyMaterial = new HashMap();
+        Map keyMaterial = new HashMap<Integer, String>();
 
         if( getAuthMethod().equals(AUTH_METHOD_PUBLIC_KEY) ) {
             if( getUserKeyPath() != null && hasUserKeyFile() ) {
-                keyMaterial.put( new Integer(Launcher.OPENSSH_KEY_FORMAT), getUserKeyMaterial() );
+                keyMaterial.put( Launcher.OPENSSH_KEY_FORMAT, getUserKeyMaterial() );
+                log("User OpenSSH private key loaded from local disk");
             }
             else if( getServerKeyMaterial() != null ) {
-                keyMaterial.put( new Integer(Launcher.OPENSSH_KEY_FORMAT), getServerKeyMaterial() );
+                keyMaterial.put( Launcher.OPENSSH_KEY_FORMAT, getServerKeyMaterial() );
+                log("Server-specific OpenSSH private key loaded from parameters");
             }
             else {
-                boolean why = getUserKeyPath() != null && hasUserKeyFile();
-                System.out.println("OpenSSH key material not found (path&file=" + why + ")");
+                log("No OpenSSH private key loaded");
             }
 
             if( getUserKeyPath() != null && hasUserPuttyKeyFile() ) {
-                keyMaterial.put( new Integer(Launcher.PUTTY_KEY_FORMAT), getUserPuttyKeyMaterial() );
+                keyMaterial.put( Launcher.PUTTY_KEY_FORMAT, getUserPuttyKeyMaterial() );
+                log("User PuTTY private key loaded from local disk");
             }
             if( getServerPuttyKeyMaterial() != null ) {
-                keyMaterial.put( new Integer(Launcher.PUTTY_KEY_FORMAT), getServerPuttyKeyMaterial() );
+                keyMaterial.put( Launcher.PUTTY_KEY_FORMAT, getServerPuttyKeyMaterial() );
+                log("Server-specific PuTTY private key loaded from local disk");
             }
             else {
                 boolean why = getUserKeyPath() != null && hasUserPuttyKeyFile();
-                System.out.println("PuTTY key material not found (path&file=" + why + ")");
+                log("No PuTTY private key loaded");
             }
 
             if(keyMaterial.isEmpty() && getUserKeyPath() == null) {
@@ -103,10 +106,7 @@ public class Application
         _launchpad.setUsername(getUsername());
         _launchpad.setServer(getServer());
         _launchpad.setServerUUID(uuid);
-
-        if(keyMaterial != null) {
-            _launchpad.setKeyMaterial(keyMaterial);
-        }
+        _launchpad.setKeyMaterial(keyMaterial);
 
         //Fix up the "use native client" button's text for friendlier UI
         if(_launchpad.isNativeClientAvailable()) {
@@ -304,7 +304,6 @@ public class Application
 
     public void log(String message, Throwable problem) {
         System.err.println(String.format("%s - %s: %s", message, problem.getClass().getName(), problem.getMessage()));
-        problem.printStackTrace();
     }	
 
     public void alert(String message) {

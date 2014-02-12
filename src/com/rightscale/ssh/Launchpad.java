@@ -51,7 +51,6 @@ public class Launchpad
 
     public Launchpad(UI ui) {
         _ui = ui;
-
         initializeLaunchers();
     }
 
@@ -66,7 +65,7 @@ public class Launchpad
     ////
 
     public String getKeyMaterial(int format) {
-        Object o = _keyMaterial.get(new Integer(format));
+        Object o = _keyMaterial.get(format);
         if(o != null) {
             return (String)o;
         }
@@ -77,10 +76,11 @@ public class Launchpad
 
     public void setKeyMaterial(Map keyMaterial) {
         _keyMaterial = keyMaterial;
+        initializeLaunchers();
     }
 
     public boolean hasKeyMaterial() {
-        return !( (_keyMaterial == null) || _keyMaterial.isEmpty() );
+        return (_keyMaterial != null) && !_keyMaterial.isEmpty();
     }
 
     public String getPassword() {
@@ -129,7 +129,8 @@ public class Launchpad
     ////
 
     public boolean hasKeyFormat(int keyFormat) {
-        return ( _keyMaterial != null && _keyMaterial.get(new Integer(keyFormat)) != null );
+        System.out.println(String.format("hasKeyFormat(%d) -> %s && %s", keyFormat, _keyMaterial != null, _keyMaterial != null && _keyMaterial.get(keyFormat) != null));
+        return ( _keyMaterial != null && _keyMaterial.get(keyFormat) != null );
     }
 
     public boolean isNativeClientAvailable() {
@@ -171,7 +172,7 @@ public class Launchpad
     public void writePrivateKeys()
             throws IOException
     {
-        if(_requiredKeys.contains(new Integer(Launcher.OPENSSH_KEY_FORMAT))) {
+        if(_requiredKeys.contains(Launcher.OPENSSH_KEY_FORMAT)) {
             String matl = getKeyMaterial(Launcher.OPENSSH_KEY_FORMAT);
             File   key  = getKeyFile(Launcher.OPENSSH_KEY_FORMAT);
 
@@ -183,7 +184,7 @@ public class Launchpad
             }
 
         }
-        if(_requiredKeys.contains(new Integer(Launcher.PUTTY_KEY_FORMAT))) {
+        if(_requiredKeys.contains(Launcher.PUTTY_KEY_FORMAT)) {
             String matl = getKeyMaterial(Launcher.PUTTY_KEY_FORMAT);
             File   key  = getKeyFile(Launcher.PUTTY_KEY_FORMAT);
 
@@ -199,6 +200,8 @@ public class Launchpad
     public boolean run()
             throws IOException
     {
+        initializeLaunchers();
+
         try {
             writePrivateKeys();
         }
@@ -237,6 +240,10 @@ public class Launchpad
         Class[]  paramTypes = {Launchpad.class};
         Object[] params     = {this};
 
+        _launchers.clear();
+        _requiredKeys.clear();
+        _nativeClientStatus = "Cannot yet determine native client status";
+
         //Initialize platform-native launchers
         for(int i = 0; i < LAUNCHERS.length; i++) {
             String cn = LAUNCHERS[i];
@@ -246,6 +253,7 @@ public class Launchpad
                 Launcher l = (Launcher) ctor.newInstance(params);
 
                 if(!hasPassword() && !hasKeyFormat(l.getRequiredKeyFormat())) {
+                    System.out.println("l.getRequiredKeyFormat() -> " + l.getRequiredKeyFormat());
                     _ui.log(cn + " is UNAVAILABLE (missing required key format).");
                     _nativeClientStatus = l.getFriendlyName() + " requires a key format that is unavailable.";
                     continue;
@@ -267,7 +275,7 @@ public class Launchpad
                 _ui.log(cn + " is COMPATIBLE.");
                 _launchers.add(l);
                 if(l.canPublicKeyAuth()) {
-                    _requiredKeys.add( new Integer(l.getRequiredKeyFormat()) );
+                    _requiredKeys.add( l.getRequiredKeyFormat() );
                 }
             }
             catch(InvocationTargetException e) {
@@ -279,7 +287,7 @@ public class Launchpad
         }
 
         //OpenSSH format is always required (for PuTTY)
-        _requiredKeys.add(new Integer(Launcher.OPENSSH_KEY_FORMAT));
+        _requiredKeys.add(Launcher.OPENSSH_KEY_FORMAT);
     }
     
     private void validate(String str) {

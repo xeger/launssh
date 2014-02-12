@@ -16,6 +16,7 @@
     <application-desc name="SSH Launcher" main-class="com.rightscale.ssh.Application">
         <argument>username=tony</argument>
         <argument>server=ssh-host.example.com</argument>
+        <argument>server-uuid=launssh-integration-test</argument>
         <argument>user-key-path=.ssh/id_rsa</argument>
      </application-desc>
      <update check="background"/>
