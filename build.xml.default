@@ -14,7 +14,7 @@
   <property name="jar.launssh" value="${jar.dir}/launssh.jar"/>
   <property name="resources.dir" value="resources"/>
 
-  <property name="classpath" value="${java.home}/jre/lib/javaws.jar"/>
+  <property name="classpath" value="lib/javaws.jar"/>
 
   <target name="clean">
     <delete dir="${build.dir}"/>
@@ -26,7 +26,7 @@
     <copy todir="${classes.dir}">
       <fileset dir="${resources.dir}"/>
     </copy>
-    <javac srcdir="${src.dir}" destdir="${classes.dir}" target="1.5"/>
+    <javac srcdir="${src.dir}" destdir="${classes.dir}" source="1.6" target="1.6" classpath="${classpath}"/>
   </target>
 
   <target name="jar" depends="compile">

@@ -14,9 +14,9 @@
 
     </resources>
     <application-desc name="SSH Launcher" main-class="com.rightscale.ssh.Application">
-        <argument>user=ssh-host.example.com</argument>
-        <argument>host=ssh-host.example.com</argument>
-        <argument>privateKey=https://foo.example.com/keys/deadbeef</argument>
+        <argument>username=tony</argument>
+        <argument>server=ssh-host.example.com</argument>
+        <argument>user-key-path=.ssh/id_rsa</argument>
      </application-desc>
      <update check="background"/>
 </jnlp>
