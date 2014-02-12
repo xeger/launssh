@@ -23,10 +23,16 @@ public class Application
         Application app = new Application(args);
 
         try {
-            app.run();
+            boolean result = app.run();
+            System.exit(result ? 0 : -1);
         }
-        catch(IOException e) {
-            app.log("Cannot launch SSH", e);
+        catch(IllegalArgumentException e) {
+            app.alert("Cannot launch SSH: " + e.getMessage());
+            System.exit(-2);            
+        }
+        catch(Exception e) {
+            app.alert("Cannot launch SSH", e);
+            System.exit(-3);
         }
 	}
 
@@ -47,7 +53,7 @@ public class Application
     }
 
     /// Run the application.
-    public void run()
+    public boolean run()
         throws IOException
     {
         Map keyMaterial = new HashMap();
@@ -76,26 +82,39 @@ public class Application
             }
 
             if(keyMaterial.isEmpty() && getUserKeyPath() == null) {
-                log("Unable to find a private key in the applet parameters.", null);
+                throw new IllegalArgumentException("Unable to identify a private key; add openssh-key-material=, putty-key-material= or user-key-path=");
             }
         }
+        else if( getAuthMethod().equals(AUTH_METHOD_PASSWORD)) {
+            if(getPassword() != null && getPassword().length() > 0) {
+                _launchpad.setPassword(getPassword());
+            }
+            else {
+                    throw new IllegalArgumentException("Unable to determine password; add password=");
+            }            
+        }
 
-        if(getPassword() != null && getPassword().length() > 0) {
-            _launchpad.setPassword(getPassword());
+        String uuid = getServerUUID();
+        if(uuid == null) {
+            uuid = getServer();
         }
 
         //Initialize the launchpad business logic
         _launchpad.setUsername(getUsername());
         _launchpad.setServer(getServer());
-        _launchpad.setServerUUID(getServerUUID());
-        _launchpad.setKeyMaterial(keyMaterial);
+        _launchpad.setServerUUID(uuid);
 
-        //Fix up the "use native client" button's text for friendlier UI
-        if(!_launchpad.isNativeClientAvailable()) {
-            throw new UnsupportedOperationException("No native SSH clients are available");
+        if(keyMaterial != null) {
+            _launchpad.setKeyMaterial(keyMaterial);
         }
 
-        _launchpad.run();
+        //Fix up the "use native client" button's text for friendlier UI
+        if(_launchpad.isNativeClientAvailable()) {
+            return _launchpad.run();
+        }
+        else {
+            throw new IllegalArgumentException("No supported SSH client is available.");
+        }
     }
 
     ////
@@ -112,7 +131,7 @@ public class Application
         if(v != null)
             return v;
         else
-            return "root";
+            return System.getProperty("user.name");
     }
 
     protected String getServer() {
@@ -143,7 +162,7 @@ public class Application
         else if("password".equals(getParameter("auth-method")))
             return AUTH_METHOD_PASSWORD;
         else
-            return null;
+            return AUTH_METHOD_PUBLIC_KEY;
     }
 
     protected String getServerKeyMaterial() {
@@ -284,6 +303,17 @@ public class Application
     }
 
     public void log(String message, Throwable problem) {
-        System.out.println(message);
+        System.err.println(String.format("%s - %s: %s", message, problem.getClass().getName(), problem.getMessage()));
+        problem.printStackTrace();
     }	
+
+    public void alert(String message) {
+        log(message);
+        JOptionPane.showMessageDialog(null, message, "SSH Launcher", JOptionPane.INFORMATION_MESSAGE);
+    }
+
+    public void alert(String message, Throwable problem) {
+        log(message, problem);
+        JOptionPane.showMessageDialog(null, String.format("%s\n(%s: %s)", message, problem.getClass().getName(), problem.getMessage()), "Error", JOptionPane.ERROR_MESSAGE);        
+    }
 }

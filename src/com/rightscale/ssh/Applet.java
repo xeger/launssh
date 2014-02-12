@@ -568,7 +568,18 @@ public class Applet
     }
 
     public void log(String message, Throwable problem) {
-        System.out.println(message);
+        System.err.println(String.format("%s - %s: %s", message, problem.getClass().getName(), problem.getMessage()));
+        problem.printStackTrace();
+    }   
+
+    public void alert(String message) {
+        log(message);
+        JOptionPane.showMessageDialog(null, message, "SSH Launcher", JOptionPane.INFORMATION_MESSAGE);
+    }
+
+    public void alert(String message, Throwable problem) {
+        log(message, problem);
+        JOptionPane.showMessageDialog(null, String.format("%s\n(%s: %s)", message, problem.getClass().getName(), problem.getMessage()), "Error", JOptionPane.ERROR_MESSAGE);        
     }
 
 }

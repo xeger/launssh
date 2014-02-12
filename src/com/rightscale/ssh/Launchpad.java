@@ -129,7 +129,7 @@ public class Launchpad
     ////
 
     public boolean hasKeyFormat(int keyFormat) {
-        return ( _keyMaterial.get(new Integer(keyFormat)) != null );
+        return ( _keyMaterial != null && _keyMaterial.get(new Integer(keyFormat)) != null );
     }
 
     public boolean isNativeClientAvailable() {
@@ -269,6 +269,9 @@ public class Launchpad
                 if(l.canPublicKeyAuth()) {
                     _requiredKeys.add( new Integer(l.getRequiredKeyFormat()) );
                 }
+            }
+            catch(InvocationTargetException e) {
+                _ui.log(cn + " is INCOMPATIBLE (threw exception during initialization)", e.getCause());                
             }
             catch(Exception e) {
                 _ui.log(cn + " is INCOMPATIBLE (threw exception during initialization)", e);
