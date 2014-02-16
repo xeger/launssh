@@ -36,7 +36,7 @@ public class Launchpad
 	private Map                  _privateKeys        = null;
 	private String               _password           = null;
 	private ArrayList<Launcher>  _launchers          = new ArrayList<Launcher>();
-	private String               _nativeClientStatus = null;
+	private String               _launcherStatus = null;
 	private Set                  _requiredKeys       = new HashSet();
 	private Map                  _writtenKeys        = new HashMap();
 
@@ -127,11 +127,11 @@ public class Launchpad
 		return ( _privateKeys != null && _privateKeys.get(keyFormat) != null );
 	}
 
-	public boolean isNativeClientAvailable() {
+	public boolean isLauncherAvailable() {
 		return (_launchers.size() > 0);
 	}
 
-	public String getNativeClientName() {
+	public String getLauncherName() {
 		if(_launchers.size() > 0) {
 			return ((Launcher)_launchers.get(0)).getFriendlyName();
 		}
@@ -140,8 +140,8 @@ public class Launchpad
 		}
 	}
 
-	public String getNativeClientStatus() {
-		return _nativeClientStatus;
+	public String getLauncherStatus() {
+		return _launcherStatus;
 	}
 
 	public File getSpecialPrivateKeyFile(int keyFormat) {
@@ -236,9 +236,8 @@ public class Launchpad
 
 		_launchers.clear();
 		_requiredKeys.clear();
-		_nativeClientStatus = "Cannot yet determine native client status";
+		_launcherStatus = "Cannot yet determine launcher status";
 
-		//Initialize platform-native launchers
 		for(int i = 0; i < LAUNCHERS.length; i++) {
 			String cn = LAUNCHERS[i];
 
@@ -248,20 +247,20 @@ public class Launchpad
 
 				if(!hasPassword() && !hasKeyFormat(l.getRequiredKeyFormat())) {
 					_ui.log(cn + " is UNAVAILABLE (missing required key format).");
-					_nativeClientStatus = l.getFriendlyName() + " requires a key format that is unavailable.";
+					_launcherStatus = l.getFriendlyName() + " requires a key format that is unavailable.";
 					continue;
 				}
 
 				if(!hasKeyMaterial() && !l.canPasswordAuth()) {
 					_ui.log(cn + " is UNAVAILABLE (password-based auth unsupported).");
-					_nativeClientStatus = l.getFriendlyName() + " does not support noninteractive password authentication.";
+					_launcherStatus = l.getFriendlyName() + " does not support noninteractive password authentication.";
 					continue;
 				}
 
 				if(!hasPassword() && !l.canPublicKeyAuth())
 				{
 					_ui.log(cn + " is UNAVAILABLE (public-key auth unsupported).");
-					_nativeClientStatus = l.getFriendlyName() + " does not support public-key authentication.";
+					_launcherStatus = l.getFriendlyName() + " does not support public-key authentication.";
 					continue;
 				}
 

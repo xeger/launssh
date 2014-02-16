@@ -2,9 +2,8 @@ TODO
 
 = Finish proof of concept
 
-fix some applet warnings:
-security: Missing Codebase manifest attribute for: http://localhost:3000/launssh.jar
-security: Missing Application-Library-Allowable-Codebase manifest attribute for: http://localhost:3000/launssh.jar
+fix launchpad "unavailable" logic: don't remove launcher from the list; leave it there, and add a status-reporting method
+so the applet/application can query to find out what's wrong 
 
 extract swing UI from applet; reuse in application
 
@@ -21,10 +20,6 @@ Add license header to all source files.
 = MindTerm replacement
 
 Create a new launcher that embeds an OpenSSH ssh.exe for Windows systems that lack PuTTY or a preinstalled OpenSSH client.
-
-= Name changes
-
-stop using "key material" and specify public or private key in variable names. (Or "user" and "host" key.)
 
 = Redo persistence 
 

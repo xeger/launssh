@@ -108,8 +108,7 @@ public class Application
         _launchpad.setServerUUID(uuid);
         _launchpad.setPrivateKeys(privateKeys);
 
-        //Fix up the "use native client" button's text for friendlier UI
-        if(_launchpad.isNativeClientAvailable()) {
+        if(_launchpad.isLauncherAvailable()) {
             return _launchpad.run();
         }
         else {

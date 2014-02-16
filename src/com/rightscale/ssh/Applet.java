@@ -21,19 +21,22 @@ public class Applet
     public static final String AUTH_METHOD_PASSWORD   = "password";
     
     public static final String NO_LAUNCHER        = "choosing";
-    public static final String LAUNCHING    = "usingNative";
+    public static final String LAUNCHING    = "launching";
     public static final String MISSING_KEY     = "missingKey";
 
     private Launchpad            _launchpad   = new Launchpad(this);
-    private boolean              _ranNative   = false;
+    private boolean              _launched    = false;
     private boolean              _hadFailure  = false;
     
     ////
     //// Methods that allow the page's JS to query our state
     ////
 
+    // This method is misnamed because the applet has an interface contract with its host pages. We
+    // no longer have non-native launchers, so this method should just be didLaunch or something.
+    // @todo rename this method when the applet params are refactored
     public boolean ranNative() {
-        return _ranNative;
+        return _launched;
     }
 
     public boolean hadFailure() {
@@ -93,21 +96,6 @@ public class Applet
     ////
     //// Properties and accessors.
     ////
-
-    protected boolean isAttemptNative() {
-        String v = getParameter("native");
-        if(v == null) {
-            return false;
-        }
-
-        v = v.toLowerCase();
-        if(v.startsWith("y") || v.startsWith("t") || v.startsWith("1")) {
-            return true;
-        }
-        else {
-            return false;
-        }
-    }
 
     protected String getUsername() {
         String v = getParameter("username");
@@ -284,7 +272,7 @@ public class Applet
     private void openSession_()
     {
     	try {
-    		_ranNative = _launchpad.run();
+    		_launched = _launchpad.run();
     	}
     	catch(Exception e) {
     		alert("Could not launch your computer's SSH client", e);
@@ -293,7 +281,7 @@ public class Applet
 
     private void init_()
     {
-        _ranNative = _hadFailure = false;
+        _launched = _hadFailure = false;
         
         Map privateKeys = new HashMap();
 
@@ -338,9 +326,12 @@ public class Applet
         _launchpad.setServerUUID(getServerUUID());
         _launchpad.setPrivateKeys(privateKeys);
 
-        //Fix up the "use native client" button's text for friendlier UI
-        if(_launchpad.isNativeClientAvailable()) {
-            _actrun.putValue(Action.NAME, "Launch " + _launchpad.getNativeClientName());
+        if(_launchpad.isLauncherAvailable()) {
+            _actrun.putValue(Action.NAME, "Launch " + _launchpad.getLauncherName());
+        }
+        else {
+        	//
+        	_actrun.putValue(Action.NAME, "Launch SSH");
         }
 
         //Initialize the UI (only if we haven't already done it)
@@ -358,7 +349,7 @@ public class Applet
             _hadFailure = true;
             setDisplayState(MISSING_KEY);
         }
-        else if( !_launchpad.isNativeClientAvailable() ) {
+        else if( !_launchpad.isLauncherAvailable() ) {
             setDisplayState(NO_LAUNCHER);
         }
         else {
@@ -388,7 +379,7 @@ public class Applet
         }
     };
 
-    Action _actrun = new AbstractAction("Launch SSH") {
+    Action _actrun = new AbstractAction() {
         public void actionPerformed(ActionEvent evt) {
         	openSession_();
         }
@@ -482,12 +473,11 @@ public class Applet
         JPanel pnl = createPanel();
         Box pnlCenter = Box.createVerticalBox();
         Box pnlButtons = Box.createHorizontalBox();
-        JLabel lbl = new JLabel( _launchpad.getNativeClientName() + " will launch in a separate window." );
+        JLabel lbl = new JLabel( _launchpad.getLauncherName() + " will launch in a separate window." );
         lbl.setAlignmentX(JComponent.CENTER_ALIGNMENT);
         pnlCenter.add(lbl);
         pnlCenter.add(Box.createRigidArea(new Dimension(1, 16)));
         JButton btnrun = new JButton(_actrun);
-                btnrun.setText("New Session");
         pnlButtons.add(btnrun);
         pnlCenter.add(pnlButtons);
         pnl.setLayout(new BorderLayout());
