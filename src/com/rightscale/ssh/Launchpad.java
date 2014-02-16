@@ -206,27 +206,49 @@ public class Launchpad
 
 			_ui.log("  Running " + l.getClass().getName());
 
-			try {				
-				if(hasKeyFormat(KeyFormat.OPEN_SSH) && l.supportsKeyFormat(KeyFormat.OPEN_SSH)) {
-					l.run( getUsername(), getServer(), getSpecialKeyFile(KeyFormat.OPEN_SSH) );
-					return true;					
+			try {
+				// Attempt public-key auth first
+				for(KeyFormat f : KeyFormat.values()) {
+					if(hasKeyFormat(f) && l.supportsKeyFormat(f)) {
+						l.run( getUsername(), getServer(), getSpecialKeyFile(f) );
+						return true;					
+					}					
 				}
-				else if(hasKeyFormat(KeyFormat.PUTTY) && l.supportsKeyFormat(KeyFormat.PUTTY)) {
-					l.run( getUsername(), getServer(), getSpecialKeyFile(KeyFormat.PUTTY) );
-					return true;										
-				}					
-				else if(hasPassword()) {
+				
+				// Try password auth if we were given one
+				if(hasPassword()) {
 					l.run( getUsername(), getServer(), getPassword() );
 					return true;
 				}
+				
+				// Give up and throw an error
+				if(_keyFormats.size() == 0) {
+					throw new MissingKeyMaterial("No key material or password is available; can't authenticate");						
+				}
+				else {
+					StringBuffer mine = new StringBuffer(), his = new StringBuffer();
+					
+					for(KeyFormat f : KeyFormat.values()) {
+						if(hasKeyFormat(f)) {
+							if(mine.length() > 0) mine.append(",");
+							mine.append(f);
+						}
+						if(l.supportsKeyFormat(f)) {
+							if(his.length() > 0) his.append(",");
+							his.append(f);
+						}
+					}
+					
+					throw new MissingKeyMaterial(String.format("Incompatible key material: I have [%s]; launcher supports [%s]", mine, his));						
+				}
 			}
 			catch(Exception e) {
-				_ui.log("Failed to launch using " + l.getFriendlyName(), e);
+				_ui.alert("Failed to launch using " + l.getFriendlyName(), e);
 			}
 		}
 
 		return false;
-			}
+	}
 
 	private void initializeLaunchers() {
 		Class<?>[]  paramTypes = {Launchpad.class};
