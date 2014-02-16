@@ -1,7 +1,5 @@
 package com.rightscale.ssh;
 
-import com.rightscale.ssh.launchers.*;
-
 import java.io.*;
 import java.net.*;
 import javax.swing.*;
@@ -50,15 +48,15 @@ public class Application
     public boolean run()
         throws IOException
     {
-        Map<Integer, String> privateKeys = new HashMap<Integer, String>();
+        Map<KeyFormat, String> privateKeys = new HashMap<KeyFormat, String>();
 
         if( getAuthMethod().equals(AUTH_METHOD_PUBLIC_KEY) ) {
             if( getUserKeyPath() != null && hasUserKeyFile() ) {
-                privateKeys.put( Launcher.OPENSSH_KEY_FORMAT, getUserPrivateKey() );
+                privateKeys.put( KeyFormat.OPEN_SSH, getUserPrivateKey() );
                 log("User OpenSSH private key loaded from local disk");
             }
             else if( getSpecialPrivateKey() != null ) {
-                privateKeys.put( Launcher.OPENSSH_KEY_FORMAT, getSpecialPrivateKey() );
+                privateKeys.put( KeyFormat.OPEN_SSH, getSpecialPrivateKey() );
                 log("Server-specific OpenSSH private key loaded from parameters");
             }
             else {
@@ -66,11 +64,11 @@ public class Application
             }
 
             if( getUserKeyPath() != null && hasUserPuttyKeyFile() ) {
-                privateKeys.put( Launcher.PUTTY_KEY_FORMAT, getUserPuttyPrivateKey() );
+                privateKeys.put( KeyFormat.PUTTY, getUserPuttyPrivateKey() );
                 log("User PuTTY private key loaded from local disk");
             }
             if( getSpecialPuttyPrivateKey() != null ) {
-                privateKeys.put( Launcher.PUTTY_KEY_FORMAT, getSpecialPuttyPrivateKey() );
+                privateKeys.put( KeyFormat.PUTTY, getSpecialPuttyPrivateKey() );
                 log("Server-specific PuTTY private key loaded from local disk");
             }
             else {

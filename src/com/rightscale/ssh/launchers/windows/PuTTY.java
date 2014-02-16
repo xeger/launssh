@@ -1,6 +1,7 @@
 package com.rightscale.ssh.launchers.windows;
 
 import com.rightscale.ssh.*;
+
 import java.io.*;
 
 public class PuTTY extends SimpleWindowsLauncher {
@@ -32,8 +33,8 @@ public class PuTTY extends SimpleWindowsLauncher {
         return "PuTTY";
     }
 
-    public boolean supportsKeyFormat(int format) {
-        return (format == PUTTY_KEY_FORMAT);
+    public boolean supportsKeyFormat(KeyFormat format) {
+        return (format == KeyFormat.PUTTY);
     }
 
     @Override

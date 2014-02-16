@@ -1,6 +1,7 @@
 package com.rightscale.ssh.launchers.windows;
 
 import com.rightscale.ssh.*;
+
 import java.io.*;
 
 public class OpenSSH extends SimpleWindowsLauncher {
@@ -25,8 +26,8 @@ public class OpenSSH extends SimpleWindowsLauncher {
         return true;
     }
 
-    public boolean supportsKeyFormat(int format) {
-        return (format == OPENSSH_KEY_FORMAT);
+    public boolean supportsKeyFormat(KeyFormat format) {
+        return (format == KeyFormat.OPEN_SSH);
     }
 
     public void run(String user, String host, File id) throws IOException {

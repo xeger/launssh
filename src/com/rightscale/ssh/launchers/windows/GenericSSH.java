@@ -21,8 +21,8 @@ public class GenericSSH extends SimpleWindowsLauncher {
         return true;
     }
 
-    public boolean supportsKeyFormat(int format) {
-        return (format == OPENSSH_KEY_FORMAT);
+    public boolean supportsKeyFormat(KeyFormat format) {
+        return (format == KeyFormat.OPEN_SSH);
     }
 
     public void run(String user, String host, File id) throws IOException {

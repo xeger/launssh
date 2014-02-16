@@ -27,15 +27,15 @@ public class Launchpad
 		"com.rightscale.ssh.launchers.windows.GenericSSH"
 	};
 
-	private UI                   _ui                 = null;
-	private String               _username           = null;
-	private String               _server             = null;
-	private String               _serverUUID         = null;
-	private Map<Integer, String> _privateKeys        = null;
-	private String               _password           = null;
-	private ArrayList<Launcher>  _launchers          = new ArrayList<Launcher>();
-	private String               _launcherStatus     = null;
-	private Set<Integer>         _keyFormats         = new HashSet<Integer>();
+	private UI                     _ui                 = null;
+	private String                 _username           = null;
+	private String                 _server             = null;
+	private String                 _serverUUID         = null;
+	private Map<KeyFormat, String> _privateKeys        = null;
+	private String                 _password           = null;
+	private ArrayList<Launcher>    _launchers          = new ArrayList<Launcher>();
+	private String                 _launcherStatus     = null;
+	private Set<KeyFormat>         _keyFormats         = new HashSet<KeyFormat>();
 
 	////
 	//// Launchpad implementation
@@ -55,7 +55,7 @@ public class Launchpad
 	//// Read/write properties
 	////
 
-	public String getPrivateKey(int format) {
+	public String getPrivateKey(KeyFormat format) {
 		Object o = _privateKeys.get(format);
 		if(o != null) {
 			return (String)o;
@@ -65,7 +65,7 @@ public class Launchpad
 		}
 	}
 
-	public void setPrivateKeys(Map<Integer, String> privateKeys) {
+	public void setPrivateKeys(Map<KeyFormat, String> privateKeys) {
 		_privateKeys = privateKeys;
 		initializeLaunchers();
 	}
@@ -119,7 +119,7 @@ public class Launchpad
 	//// Read-only and derived properties
 	////
 
-	public boolean hasKeyFormat(int keyFormat) {
+	public boolean hasKeyFormat(KeyFormat keyFormat) {
 		return ( _privateKeys != null && _privateKeys.get(keyFormat) != null );
 	}
 
@@ -140,15 +140,15 @@ public class Launchpad
 		return _launcherStatus;
 	}
 
-	public File getSpecialKeyFile(int keyFormat) {
+	public File getSpecialKeyFile(KeyFormat keyFormat) {
 		if(getServerUUID() == null) {
 			return null;
 		}
 
 		switch(keyFormat) {
-		case Launcher.OPENSSH_KEY_FORMAT:
+		case OPEN_SSH:
 			return new File(getSafeDirectory(), getServerUUID());
-		case Launcher.PUTTY_KEY_FORMAT:
+		case PUTTY:
 			return new File(getSafeDirectory(), getServerUUID() + ".ppk");
 		default:
 			throw new Error("Unsupported key format");
@@ -162,9 +162,9 @@ public class Launchpad
 	public void writePrivateKeys()
 			throws IOException
 			{
-		if(_keyFormats.contains(Launcher.OPENSSH_KEY_FORMAT)) {
-			String matl = getPrivateKey(Launcher.OPENSSH_KEY_FORMAT);
-			File   key  = getSpecialKeyFile(Launcher.OPENSSH_KEY_FORMAT);
+		if(_keyFormats.contains(KeyFormat.OPEN_SSH)) {
+			String matl = getPrivateKey(KeyFormat.OPEN_SSH);
+			File   key  = getSpecialKeyFile(KeyFormat.OPEN_SSH);
 
 			if(matl != null && key != null) {
 				SimpleLauncher.writePrivateKey(matl, key, KEY_DELETION_TIMEOUT);
@@ -174,9 +174,9 @@ public class Launchpad
 			}
 
 		}
-		if(_keyFormats.contains(Launcher.PUTTY_KEY_FORMAT)) {
-			String matl = getPrivateKey(Launcher.PUTTY_KEY_FORMAT);
-			File   key  = getSpecialKeyFile(Launcher.PUTTY_KEY_FORMAT);
+		if(_keyFormats.contains(KeyFormat.PUTTY)) {
+			String matl = getPrivateKey(KeyFormat.PUTTY);
+			File   key  = getSpecialKeyFile(KeyFormat.PUTTY);
 
 			if(matl != null && key != null) {
 				SimpleLauncher.writePrivateKey(matl, key, KEY_DELETION_TIMEOUT);
@@ -208,12 +208,12 @@ public class Launchpad
 			_ui.log("  Running " + l.getClass().getName());
 
 			try {				
-				if(hasKeyFormat(Launcher.OPENSSH_KEY_FORMAT) && l.supportsKeyFormat(Launcher.OPENSSH_KEY_FORMAT)) {
-					l.run( getUsername(), getServer(), getSpecialKeyFile(Launcher.OPENSSH_KEY_FORMAT) );
+				if(hasKeyFormat(KeyFormat.OPEN_SSH) && l.supportsKeyFormat(KeyFormat.OPEN_SSH)) {
+					l.run( getUsername(), getServer(), getSpecialKeyFile(KeyFormat.OPEN_SSH) );
 					return true;					
 				}
-				else if(hasKeyFormat(Launcher.PUTTY_KEY_FORMAT) && l.supportsKeyFormat(Launcher.PUTTY_KEY_FORMAT)) {
-					l.run( getUsername(), getServer(), getSpecialKeyFile(Launcher.PUTTY_KEY_FORMAT) );
+				else if(hasKeyFormat(KeyFormat.PUTTY) && l.supportsKeyFormat(KeyFormat.PUTTY)) {
+					l.run( getUsername(), getServer(), getSpecialKeyFile(KeyFormat.PUTTY) );
 					return true;										
 				}					
 				else if(hasPassword()) {
@@ -260,11 +260,11 @@ public class Launchpad
 				_ui.log(cn + " is COMPATIBLE.");
 				_launchers.add(l);
 				if(l.canPublicKeyAuth()) {
-					if(l.supportsKeyFormat(Launcher.OPENSSH_KEY_FORMAT)) {
-						_keyFormats.add(Launcher.OPENSSH_KEY_FORMAT);						
+					if(l.supportsKeyFormat(KeyFormat.OPEN_SSH)) {
+						_keyFormats.add(KeyFormat.OPEN_SSH);						
 					}
-					if(l.supportsKeyFormat(Launcher.PUTTY_KEY_FORMAT)) {
-						_keyFormats.add(Launcher.PUTTY_KEY_FORMAT);						
+					if(l.supportsKeyFormat(KeyFormat.PUTTY)) {
+						_keyFormats.add(KeyFormat.PUTTY);						
 					}
 				}
 			}

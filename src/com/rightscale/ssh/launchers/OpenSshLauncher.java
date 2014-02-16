@@ -6,6 +6,7 @@
 package com.rightscale.ssh.launchers;
 
 import com.rightscale.ssh.*;
+
 import java.io.*;
 
 /**
@@ -25,8 +26,8 @@ abstract public class OpenSshLauncher
         return "OpenSSH";
     }
 
-    public boolean supportsKeyFormat(int format) {
-        return (format == OPENSSH_KEY_FORMAT);
+    public boolean supportsKeyFormat(KeyFormat format) {
+        return (format == KeyFormat.OPEN_SSH);
     }
 
     @Override

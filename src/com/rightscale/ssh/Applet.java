@@ -298,15 +298,15 @@ public class Applet
     {
         _launched = _hadFailure = false;
         
-        Map<Integer, String> privateKeys = new HashMap<Integer, String>();
+        Map<KeyFormat, String> privateKeys = new HashMap<KeyFormat, String>();
 
         if( getAuthMethod().equals(AUTH_METHOD_PUBLIC_KEY) ) {
             if( getUserKeyPath() != null && hasUserKeyFile() ) {
-                privateKeys.put( Launcher.OPENSSH_KEY_FORMAT, getUserPrivateKey() );
+                privateKeys.put( KeyFormat.OPEN_SSH, getUserPrivateKey() );
                 log("Added user's private OpenSSH key to launcher; source: " + getUserKeyPath());
             }
             else if( getSpecialPrivateKey() != null ) {
-                privateKeys.put( Launcher.OPENSSH_KEY_FORMAT, getSpecialPrivateKey() );
+                privateKeys.put( KeyFormat.OPEN_SSH, getSpecialPrivateKey() );
                 log("Added special private OpenSSH key to launcher");
             }
             else {
@@ -314,11 +314,11 @@ public class Applet
             }
 
             if( getUserKeyPath() != null && hasUserPuttyKeyFile() ) {
-                privateKeys.put( Launcher.PUTTY_KEY_FORMAT, getUserPuttyPrivateKey() );
+                privateKeys.put( KeyFormat.PUTTY, getUserPuttyPrivateKey() );
                 log("Added user's private PuTTY key to launcher; source: " + getUserKeyPath());
             }
             if( getSpecialPuttyPrivateKey() != null ) {
-                privateKeys.put( Launcher.PUTTY_KEY_FORMAT, getSpecialPuttyPrivateKey() );
+                privateKeys.put( KeyFormat.PUTTY, getSpecialPuttyPrivateKey() );
                 log("Added special private PuTTY private key to launcher");
             }
             else {
