@@ -1,17 +1,11 @@
 package com.rightscale.ssh;
 
-import com.rightscale.util.*;
 import com.rightscale.ssh.launchers.*;
 
-import java.lang.reflect.*;
-import java.awt.*;
-import java.awt.event.*;
 import java.io.*;
 import java.net.*;
-import javax.jnlp.*;
 import javax.swing.*;
 import java.util.*;
-import java.security.*;
 
 public class Application
     implements com.rightscale.ssh.UI
@@ -56,7 +50,7 @@ public class Application
     public boolean run()
         throws IOException
     {
-        Map privateKeys = new HashMap<Integer, String>();
+        Map<Integer, String> privateKeys = new HashMap<Integer, String>();
 
         if( getAuthMethod().equals(AUTH_METHOD_PUBLIC_KEY) ) {
             if( getUserKeyPath() != null && hasUserKeyFile() ) {
@@ -80,7 +74,6 @@ public class Application
                 log("Server-specific PuTTY private key loaded from local disk");
             }
             else {
-                boolean why = getUserKeyPath() != null && hasUserPuttyKeyFile();
                 log("No PuTTY private key loaded");
             }
 
@@ -240,11 +233,14 @@ public class Application
 
     protected String getUserPrivateKey()
     {
+    	BufferedReader br = null;
+    	StringBuffer   sb = null;
+    	
         try {
             if(hasUserKeyFile()) {
                 File f = getUserKeyFile();
-                BufferedReader br = new BufferedReader(new InputStreamReader(new FileInputStream(f)));
-                StringBuffer sb = new StringBuffer();
+                br = new BufferedReader(new InputStreamReader(new FileInputStream(f)));
+                sb = new StringBuffer();
                 while(br.ready()) {
                     sb.append(br.readLine());
                     sb.append("\n");
@@ -258,16 +254,24 @@ public class Application
         }
         catch(Exception e) {
             return null;
+        }
+        finally {
+        	if(br != null) {        		
+        		try { br.close(); } catch(Exception e) {}
+        	}
         }
     }
 
     protected String getUserPuttyPrivateKey()
     {
+    	BufferedReader br = null;
+    	StringBuffer   sb = null;
+    	
         try {
             if(hasUserPuttyKeyFile()) {
                 File f = getUserPuttyKeyFile();
-                BufferedReader br = new BufferedReader(new InputStreamReader(new FileInputStream(f)));
-                StringBuffer sb = new StringBuffer();
+                br = new BufferedReader(new InputStreamReader(new FileInputStream(f)));
+                sb = new StringBuffer();
                 while(br.ready()) {
                     sb.append(br.readLine());
                     sb.append("\n");
@@ -281,6 +285,11 @@ public class Application
         }
         catch(Exception e) {
             return null;
+        }
+        finally {
+        	if(br != null) {        		
+        		try { br.close(); } catch(Exception e) {}
+        	}
         }
     }
 

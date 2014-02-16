@@ -1,13 +1,11 @@
 package com.rightscale.ssh;
 
 import com.rightscale.ssh.launchers.Launcher;
-import com.rightscale.ssh.*;
 import com.rightscale.ssh.launchers.*;
 
 import java.lang.reflect.*;
 import java.io.*;
 import java.util.*;
-import java.security.*;
 import java.util.regex.*;
 
 
@@ -33,12 +31,11 @@ public class Launchpad
 	private String               _username           = null;
 	private String               _server             = null;
 	private String               _serverUUID         = null;
-	private Map                  _privateKeys        = null;
+	private Map<Integer, String> _privateKeys        = null;
 	private String               _password           = null;
 	private ArrayList<Launcher>  _launchers          = new ArrayList<Launcher>();
-	private String               _launcherStatus = null;
-	private Set                  _requiredKeys       = new HashSet();
-	private Map                  _writtenKeys        = new HashMap();
+	private String               _launcherStatus     = null;
+	private Set<Integer>         _keyFormats         = new HashSet<Integer>();
 
 	////
 	//// Launchpad implementation
@@ -46,7 +43,6 @@ public class Launchpad
 
 	public Launchpad(UI ui) {
 		_ui = ui;
-		initializeLaunchers();
 	}
 
 	public File getSafeDirectory() {
@@ -69,7 +65,7 @@ public class Launchpad
 		}
 	}
 
-	public void setPrivateKeys(Map privateKeys) {
+	public void setPrivateKeys(Map<Integer, String> privateKeys) {
 		_privateKeys = privateKeys;
 		initializeLaunchers();
 	}
@@ -144,7 +140,7 @@ public class Launchpad
 		return _launcherStatus;
 	}
 
-	public File getSpecialPrivateKeyFile(int keyFormat) {
+	public File getSpecialKeyFile(int keyFormat) {
 		if(getServerUUID() == null) {
 			return null;
 		}
@@ -166,9 +162,9 @@ public class Launchpad
 	public void writePrivateKeys()
 			throws IOException
 			{
-		if(_requiredKeys.contains(Launcher.OPENSSH_KEY_FORMAT)) {
+		if(_keyFormats.contains(Launcher.OPENSSH_KEY_FORMAT)) {
 			String matl = getPrivateKey(Launcher.OPENSSH_KEY_FORMAT);
-			File   key  = getSpecialPrivateKeyFile(Launcher.OPENSSH_KEY_FORMAT);
+			File   key  = getSpecialKeyFile(Launcher.OPENSSH_KEY_FORMAT);
 
 			if(matl != null && key != null) {
 				SimpleLauncher.writePrivateKey(matl, key, KEY_DELETION_TIMEOUT);
@@ -178,9 +174,9 @@ public class Launchpad
 			}
 
 		}
-		if(_requiredKeys.contains(Launcher.PUTTY_KEY_FORMAT)) {
+		if(_keyFormats.contains(Launcher.PUTTY_KEY_FORMAT)) {
 			String matl = getPrivateKey(Launcher.PUTTY_KEY_FORMAT);
-			File   key  = getSpecialPrivateKeyFile(Launcher.PUTTY_KEY_FORMAT);
+			File   key  = getSpecialKeyFile(Launcher.PUTTY_KEY_FORMAT);
 
 			if(matl != null && key != null) {
 				SimpleLauncher.writePrivateKey(matl, key, KEY_DELETION_TIMEOUT);
@@ -205,18 +201,21 @@ public class Launchpad
 		}
 
 		//Try all the launchers in sequence
-		Iterator it = _launchers.iterator();
+		Iterator<Launcher> it = _launchers.iterator();
 		while( it.hasNext() ) {
 			Launcher l = (Launcher)it.next();
 
 			_ui.log("  Running " + l.getClass().getName());
 
-			try {
-				if(hasKeyMaterial()) {
-					File keyFile = getSpecialPrivateKeyFile(l.getRequiredKeyFormat());
-					l.run( getUsername(), getServer(), keyFile );
-					return true;
+			try {				
+				if(hasKeyFormat(Launcher.OPENSSH_KEY_FORMAT) && l.supportsKeyFormat(Launcher.OPENSSH_KEY_FORMAT)) {
+					l.run( getUsername(), getServer(), getSpecialKeyFile(Launcher.OPENSSH_KEY_FORMAT) );
+					return true;					
 				}
+				else if(hasKeyFormat(Launcher.PUTTY_KEY_FORMAT) && l.supportsKeyFormat(Launcher.PUTTY_KEY_FORMAT)) {
+					l.run( getUsername(), getServer(), getSpecialKeyFile(Launcher.PUTTY_KEY_FORMAT) );
+					return true;										
+				}					
 				else if(hasPassword()) {
 					l.run( getUsername(), getServer(), getPassword() );
 					return true;
@@ -231,25 +230,19 @@ public class Launchpad
 			}
 
 	private void initializeLaunchers() {
-		Class[]  paramTypes = {Launchpad.class};
+		Class<?>[]  paramTypes = {Launchpad.class};
 		Object[] params     = {this};
 
 		_launchers.clear();
-		_requiredKeys.clear();
+		_keyFormats.clear();
 		_launcherStatus = "Cannot yet determine launcher status";
 
 		for(int i = 0; i < LAUNCHERS.length; i++) {
 			String cn = LAUNCHERS[i];
 
 			try {
-				Constructor ctor = Class.forName(cn).getConstructor(paramTypes);
+				Constructor<?> ctor = Class.forName(cn).getConstructor(paramTypes);
 				Launcher l = (Launcher) ctor.newInstance(params);
-
-				if(!hasPassword() && !hasKeyFormat(l.getRequiredKeyFormat())) {
-					_ui.log(cn + " is UNAVAILABLE (missing required key format).");
-					_launcherStatus = l.getFriendlyName() + " requires a key format that is unavailable.";
-					continue;
-				}
 
 				if(!hasKeyMaterial() && !l.canPasswordAuth()) {
 					_ui.log(cn + " is UNAVAILABLE (password-based auth unsupported).");
@@ -267,7 +260,12 @@ public class Launchpad
 				_ui.log(cn + " is COMPATIBLE.");
 				_launchers.add(l);
 				if(l.canPublicKeyAuth()) {
-					_requiredKeys.add( l.getRequiredKeyFormat() );
+					if(l.supportsKeyFormat(Launcher.OPENSSH_KEY_FORMAT)) {
+						_keyFormats.add(Launcher.OPENSSH_KEY_FORMAT);						
+					}
+					if(l.supportsKeyFormat(Launcher.PUTTY_KEY_FORMAT)) {
+						_keyFormats.add(Launcher.PUTTY_KEY_FORMAT);						
+					}
 				}
 			}
 			catch(InvocationTargetException e) {
@@ -277,9 +275,6 @@ public class Launchpad
 				_ui.log(cn + " is INCOMPATIBLE (threw exception during initialization)", e);
 			}
 		}
-
-		//OpenSSH format is always required (for PuTTY)
-		_requiredKeys.add(Launcher.OPENSSH_KEY_FORMAT);
 	}
 
 	// Validate a parameter against a whitelist of known-good characters and raise an exception if it's suspicious.

@@ -1,10 +1,7 @@
 package com.rightscale.ssh;
 
-import com.rightscale.ssh.*;
-import com.rightscale.util.*;
 import com.rightscale.ssh.launchers.*;
 
-import java.lang.reflect.*;
 import java.awt.*;
 import java.awt.event.*;
 import javax.swing.*;
@@ -17,7 +14,9 @@ public class Applet
         extends java.applet.Applet
         implements java.applet.AppletStub, com.rightscale.ssh.UI
 {
-    public static final String AUTH_METHOD_PUBLIC_KEY = "publickey";
+	private static final long serialVersionUID = -7047031265889225736L;
+	
+	public static final String AUTH_METHOD_PUBLIC_KEY = "publickey";
     public static final String AUTH_METHOD_PASSWORD   = "password";
     
     public static final String NO_LAUNCHER        = "choosing";
@@ -61,7 +60,7 @@ public class Applet
      */
     public void init() {
         try {
-            AccessController.doPrivileged(new PrivilegedExceptionAction() {
+            AccessController.doPrivileged(new PrivilegedExceptionAction<Object>() {
                 public Object run() throws IOException {
                     init_();
                     return null;
@@ -78,7 +77,7 @@ public class Applet
      */
     public void start() {
         try {
-            AccessController.doPrivileged(new PrivilegedExceptionAction() {
+            AccessController.doPrivileged(new PrivilegedExceptionAction<Object>() {
                 public Object run() throws IOException {
                     start_();
                     return null;
@@ -211,11 +210,14 @@ public class Applet
 
     protected String getUserPrivateKey()
     {
+    	BufferedReader br = null;
+    	StringBuffer   sb = null;
+    	
         try {
             if(hasUserKeyFile()) {
                 File f = getUserKeyFile();
-                BufferedReader br = new BufferedReader(new InputStreamReader(new FileInputStream(f)));
-                StringBuffer sb = new StringBuffer();
+                br = new BufferedReader(new InputStreamReader(new FileInputStream(f)));
+                sb = new StringBuffer();
                 while(br.ready()) {
                     sb.append(br.readLine());
                     sb.append("\n");
@@ -230,15 +232,23 @@ public class Applet
         catch(Exception e) {
             return null;
         }
+        finally {
+        	if(br != null) {        		
+        		try { br.close(); } catch(Exception e) {}
+        	}
+        }
     }
 
     protected String getUserPuttyPrivateKey()
     {
+    	BufferedReader br = null;
+    	StringBuffer   sb = null;
+    	
         try {
             if(hasUserPuttyKeyFile()) {
                 File f = getUserPuttyKeyFile();
-                BufferedReader br = new BufferedReader(new InputStreamReader(new FileInputStream(f)));
-                StringBuffer sb = new StringBuffer();
+                br = new BufferedReader(new InputStreamReader(new FileInputStream(f)));
+                sb = new StringBuffer();
                 while(br.ready()) {
                     sb.append(br.readLine());
                     sb.append("\n");
@@ -252,6 +262,11 @@ public class Applet
         }
         catch(Exception e) {
             return null;
+        }
+        finally {
+        	if(br != null) {        		
+        		try { br.close(); } catch(Exception e) {}
+        	}
         }
     }
 
@@ -283,7 +298,7 @@ public class Applet
     {
         _launched = _hadFailure = false;
         
-        Map privateKeys = new HashMap();
+        Map<Integer, String> privateKeys = new HashMap<Integer, String>();
 
         if( getAuthMethod().equals(AUTH_METHOD_PUBLIC_KEY) ) {
             if( getUserKeyPath() != null && hasUserKeyFile() ) {
@@ -307,7 +322,6 @@ public class Applet
                 log("Added special private PuTTY private key to launcher");
             }
             else {
-                boolean why = getUserKeyPath() != null && hasUserPuttyKeyFile();
                 log(String.format("User PuTTY key not found (userKeyPath=%s, hasUserKeyFile=%s)", getUserKeyPath() != null, hasUserKeyFile()));
             }
 
@@ -364,7 +378,8 @@ public class Applet
     boolean        _initialized = false;
     JPanel         _pnlMain     = null;
 
-    Action _actTroubleshoot = new AbstractAction("Troubleshoot") {
+    @SuppressWarnings("serial")
+	Action _actTroubleshoot = new AbstractAction("Troubleshoot") {
         public void actionPerformed(ActionEvent evt) {
             URL url = getTroubleshootingLink();
             
@@ -379,7 +394,8 @@ public class Applet
         }
     };
 
-    Action _actrun = new AbstractAction() {
+    @SuppressWarnings("serial")
+	Action _actrun = new AbstractAction() {
         public void actionPerformed(ActionEvent evt) {
         	openSession_();
         }
