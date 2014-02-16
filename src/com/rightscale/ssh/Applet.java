@@ -20,8 +20,8 @@ public class Applet
     public static final String AUTH_METHOD_PUBLIC_KEY = "publickey";
     public static final String AUTH_METHOD_PASSWORD   = "password";
     
-    public static final String CHOOSING        = "choosing";
-    public static final String USING_NATIVE    = "usingNative";
+    public static final String NO_LAUNCHER        = "choosing";
+    public static final String LAUNCHING    = "usingNative";
     public static final String MISSING_KEY     = "missingKey";
 
     private Launchpad            _launchpad   = new Launchpad(this);
@@ -164,14 +164,14 @@ public class Applet
             return null;
     }
 
-    protected String getServerKeyMaterial() {
+    protected String getSpecialPrivateKey() {
         String newline = System.getProperty("line.separator");
         String km = getParameter("openssh-key-material");
         if(km == null) return null;
         return km.replaceAll("\\*", newline);
     }
 
-    protected String getServerPuttyKeyMaterial() {
+    protected String getSpecialPuttyPrivateKey() {
         String newline = System.getProperty("line.separator");
         String km = getParameter("putty-key-material");
         if(km == null) return null;
@@ -238,7 +238,7 @@ public class Applet
         return f.exists();
     }
 
-    protected String getUserKeyMaterial()
+    protected String getUserPrivateKey()
     {
         try {
             if(hasUserKeyFile()) {
@@ -253,7 +253,7 @@ public class Applet
                 return sb.toString();
             }
             else {
-                throw new Error("Key file does not exist");
+                throw new Error("User private key file does not exist");
             }
         }
         catch(Exception e) {
@@ -261,7 +261,7 @@ public class Applet
         }
     }
 
-    protected String getUserPuttyKeyMaterial()
+    protected String getUserPuttyPrivateKey()
     {
         try {
             if(hasUserPuttyKeyFile()) {
@@ -302,32 +302,35 @@ public class Applet
     {
         _ranNative = _hadFailure = false;
         
-        Map keyMaterial = new HashMap();
+        Map privateKeys = new HashMap();
 
         if( getAuthMethod().equals(AUTH_METHOD_PUBLIC_KEY) ) {
             if( getUserKeyPath() != null && hasUserKeyFile() ) {
-                keyMaterial.put( Launcher.OPENSSH_KEY_FORMAT, getUserKeyMaterial() );
+                privateKeys.put( Launcher.OPENSSH_KEY_FORMAT, getUserPrivateKey() );
+                log("Added user's private OpenSSH key to launcher; source: " + getUserKeyPath());
             }
-            else if( getServerKeyMaterial() != null ) {
-                keyMaterial.put( Launcher.OPENSSH_KEY_FORMAT, getServerKeyMaterial() );
+            else if( getSpecialPrivateKey() != null ) {
+                privateKeys.put( Launcher.OPENSSH_KEY_FORMAT, getSpecialPrivateKey() );
+                log("Added special private OpenSSH key to launcher");
             }
             else {
-                boolean why = getUserKeyPath() != null && hasUserKeyFile();
-                System.out.println("OpenSSH key material not found (path&file=" + why + ")");
+                log(String.format("User OpenSSH key not found (userKeyPath=%s, hasUserKeyFile=%s)", getUserKeyPath() != null, hasUserKeyFile()));
             }
 
             if( getUserKeyPath() != null && hasUserPuttyKeyFile() ) {
-                keyMaterial.put( Launcher.PUTTY_KEY_FORMAT, getUserPuttyKeyMaterial() );
+                privateKeys.put( Launcher.PUTTY_KEY_FORMAT, getUserPuttyPrivateKey() );
+                log("Added user's private PuTTY key to launcher; source: " + getUserKeyPath());
             }
-            if( getServerPuttyKeyMaterial() != null ) {
-                keyMaterial.put( Launcher.PUTTY_KEY_FORMAT, getServerPuttyKeyMaterial() );
+            if( getSpecialPuttyPrivateKey() != null ) {
+                privateKeys.put( Launcher.PUTTY_KEY_FORMAT, getSpecialPuttyPrivateKey() );
+                log("Added special private PuTTY private key to launcher");
             }
             else {
                 boolean why = getUserKeyPath() != null && hasUserPuttyKeyFile();
-                System.out.println("PuTTY key material not found (path&file=" + why + ")");
+                log(String.format("User PuTTY key not found (userKeyPath=%s, hasUserKeyFile=%s)", getUserKeyPath() != null, hasUserKeyFile()));
             }
 
-            if(keyMaterial.isEmpty() && getUserKeyPath() == null) {
+            if(privateKeys.isEmpty() && getUserKeyPath() == null) {
                 log("Unable to find a private key in the applet parameters.", null);
             }
         }
@@ -340,11 +343,11 @@ public class Applet
         _launchpad.setUsername(getUsername());
         _launchpad.setServer(getServer());
         _launchpad.setServerUUID(getServerUUID());
-        _launchpad.setKeyMaterial(keyMaterial);
+        _launchpad.setPrivateKeys(privateKeys);
 
         //Fix up the "use native client" button's text for friendlier UI
         if(_launchpad.isNativeClientAvailable()) {
-            _actrun.putValue(_actrun.NAME, "Launch " + _launchpad.getNativeClientName());
+            _actrun.putValue(Action.NAME, "Launch " + _launchpad.getNativeClientName());
         }
 
         //Initialize the UI (only if we haven't already done it)
@@ -379,7 +382,7 @@ public class Applet
 
         if( isAttemptNative() ) {
             try {
-                setDisplayState(USING_NATIVE);
+                setDisplayState(LAUNCHING);
                 _ranNative = didLaunch = _launchpad.run();
             }
             catch(IOException e) {
@@ -400,8 +403,8 @@ public class Applet
             _hadFailure = true;
             setDisplayState(MISSING_KEY);
         }
-        else if( _launchpad.isNativeClientAvailable() ) {
-            setDisplayState(CHOOSING);
+        else if( !_launchpad.isNativeClientAvailable() ) {
+            setDisplayState(NO_LAUNCHER);
         }
     }
 
@@ -415,8 +418,14 @@ public class Applet
     Action _actTroubleshoot = new AbstractAction("Troubleshoot") {
         public void actionPerformed(ActionEvent evt) {
             URL url = getTroubleshootingLink();
-            if(url != null) {
-                Applet.this.getAppletContext().showDocument(url, "_blank");
+            
+            Desktop desktop = Desktop.isDesktopSupported() ? Desktop.getDesktop() : null;
+            if (desktop != null && desktop.isSupported(Desktop.Action.BROWSE)) {
+                try {
+                    desktop.browse(url.toURI());
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
             }
         }
     };
@@ -425,7 +434,7 @@ public class Applet
         public void actionPerformed(ActionEvent evt) {
             try {
                 _ranNative = _launchpad.run();
-                setDisplayState(USING_NATIVE);
+                setDisplayState(LAUNCHING);
             }
             catch(IOException e) {
                 log("Could not invoke your computer's SSH application.", e);
@@ -445,16 +454,16 @@ public class Applet
         Container header            = createHeaderUI();
 
         //One panel for each display state the applet can be in
-        Container pnlChoosing       = createChoosingUI(),
-                  pnlUsingNative    = createUsingNativeUI(),
-                  pnlMissingKey     = createMissingKeyUI();
+        Container pnlNoLauncher     = createNoLauncherUI(),
+                  pnlMissingKey     = createMissingKeyUI(),
+        		  pnlLaunching      = createLaunchingUI();
 
         //Add all of the initialized panels to the main (CardLayout) panel
         _pnlMain = createPanel();
         _pnlMain.setLayout(new CardLayout());
-        _pnlMain.add(pnlChoosing, CHOOSING);
-        _pnlMain.add(pnlUsingNative, USING_NATIVE);
+        _pnlMain.add(pnlLaunching, LAUNCHING);
         _pnlMain.add(pnlMissingKey, MISSING_KEY);
+        _pnlMain.add(pnlNoLauncher, NO_LAUNCHER);
 
         //Add the main and header panels to ourself
         this.setLayout(new BorderLayout());
@@ -482,23 +491,42 @@ public class Applet
     }
 
 
-    private Container createChoosingUI() {
+    private Container createNoLauncherUI() {
         JPanel pnl = createPanel();
         Box pnlCenter = Box.createVerticalBox();
-        Box pnlButtons = Box.createHorizontalBox();
-        JLabel lbl = new JLabel( "How do you want to connect?" );
-        lbl.setFont(lbl.getFont().deriveFont(Font.BOLD));
+
+        JLabel lbl = new JLabel("Cannot find a supported SSH client");
+        lbl.setAlignmentX(JComponent.CENTER_ALIGNMENT);
+        lbl.setForeground(Color.RED);
+        pnlCenter.add(lbl);
+
+        if(SimpleLauncher.isPlatform("Windows")) {
+	        lbl = new JLabel("Install PuTTY or OpenSSH");
+        }
+        else if(SimpleLauncher.isPlatform("Mac")) {
+	        lbl = new JLabel("Confirm that AppleScript, Terminal.app and /usr/bin/ssh are installed and functioning normally");
+        }
+        else {
+	        lbl = new JLabel("Install OpenSSH and a suppored terminal (gnome-terminal, konsole, xterm)");
+        }
         lbl.setAlignmentX(JComponent.CENTER_ALIGNMENT);
         pnlCenter.add(lbl);
-        pnlButtons.add(new JButton(_actrun));
-        pnlCenter.add(pnlButtons);
+
+        pnlCenter.add(Box.createRigidArea(new Dimension(1, 16)));
+        
+        if(getTroubleshootingLink() != null) {
+            pnlCenter.add(Box.createRigidArea(new Dimension(1, 16)));
+            Box pnlButtons = Box.createHorizontalBox();
+            pnlButtons.add(new JButton(_actTroubleshoot));
+            pnlCenter.add(pnlButtons);
+        }
+
         pnl.setLayout(new BorderLayout());
         pnl.add(pnlCenter, BorderLayout.CENTER);
-
         return pnl;
     }
 
-    private Container createUsingNativeUI() {
+    private Container createLaunchingUI() {
         JPanel pnl = createPanel();
         Box pnlCenter = Box.createVerticalBox();
         Box pnlButtons = Box.createHorizontalBox();
@@ -569,7 +597,6 @@ public class Applet
 
     public void log(String message, Throwable problem) {
         System.err.println(String.format("%s - %s: %s", message, problem.getClass().getName(), problem.getMessage()));
-        problem.printStackTrace();
     }   
 
     public void alert(String message) {

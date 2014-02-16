@@ -51,6 +51,8 @@ public abstract class SimpleLauncher implements Launcher {
         return _runtime;
     }
 
+    /// Known platforms include: "Windows", "Mac"
+    /// Not yet observed: Linux, AIX, Solaris, etc. (Capitalization?)
     static public boolean isPlatform(String platform) {
         String osName = System.getProperty("os.name");
         return (osName.toLowerCase().indexOf(platform.toLowerCase()) != -1);

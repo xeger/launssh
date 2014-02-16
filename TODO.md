@@ -2,8 +2,6 @@ TODO
 
 = Finish proof of concept
 
-revisit and simplify applet UI
-
 fix some applet warnings:
 security: Missing Codebase manifest attribute for: http://localhost:3000/launssh.jar
 security: Missing Application-Library-Allowable-Codebase manifest attribute for: http://localhost:3000/launssh.jar

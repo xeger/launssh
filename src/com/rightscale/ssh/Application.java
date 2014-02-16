@@ -56,15 +56,15 @@ public class Application
     public boolean run()
         throws IOException
     {
-        Map keyMaterial = new HashMap<Integer, String>();
+        Map privateKeys = new HashMap<Integer, String>();
 
         if( getAuthMethod().equals(AUTH_METHOD_PUBLIC_KEY) ) {
             if( getUserKeyPath() != null && hasUserKeyFile() ) {
-                keyMaterial.put( Launcher.OPENSSH_KEY_FORMAT, getUserKeyMaterial() );
+                privateKeys.put( Launcher.OPENSSH_KEY_FORMAT, getUserPrivateKey() );
                 log("User OpenSSH private key loaded from local disk");
             }
-            else if( getServerKeyMaterial() != null ) {
-                keyMaterial.put( Launcher.OPENSSH_KEY_FORMAT, getServerKeyMaterial() );
+            else if( getSpecialPrivateKey() != null ) {
+                privateKeys.put( Launcher.OPENSSH_KEY_FORMAT, getSpecialPrivateKey() );
                 log("Server-specific OpenSSH private key loaded from parameters");
             }
             else {
@@ -72,11 +72,11 @@ public class Application
             }
 
             if( getUserKeyPath() != null && hasUserPuttyKeyFile() ) {
-                keyMaterial.put( Launcher.PUTTY_KEY_FORMAT, getUserPuttyKeyMaterial() );
+                privateKeys.put( Launcher.PUTTY_KEY_FORMAT, getUserPuttyPrivateKey() );
                 log("User PuTTY private key loaded from local disk");
             }
-            if( getServerPuttyKeyMaterial() != null ) {
-                keyMaterial.put( Launcher.PUTTY_KEY_FORMAT, getServerPuttyKeyMaterial() );
+            if( getSpecialPuttyPrivateKey() != null ) {
+                privateKeys.put( Launcher.PUTTY_KEY_FORMAT, getSpecialPuttyPrivateKey() );
                 log("Server-specific PuTTY private key loaded from local disk");
             }
             else {
@@ -84,7 +84,7 @@ public class Application
                 log("No PuTTY private key loaded");
             }
 
-            if(keyMaterial.isEmpty() && getUserKeyPath() == null) {
+            if(privateKeys.isEmpty() && getUserKeyPath() == null) {
                 throw new IllegalArgumentException("Unable to identify a private key; add openssh-key-material=, putty-key-material= or user-key-path=");
             }
         }
@@ -106,7 +106,7 @@ public class Application
         _launchpad.setUsername(getUsername());
         _launchpad.setServer(getServer());
         _launchpad.setServerUUID(uuid);
-        _launchpad.setKeyMaterial(keyMaterial);
+        _launchpad.setPrivateKeys(privateKeys);
 
         //Fix up the "use native client" button's text for friendlier UI
         if(_launchpad.isNativeClientAvailable()) {
@@ -165,14 +165,14 @@ public class Application
             return AUTH_METHOD_PUBLIC_KEY;
     }
 
-    protected String getServerKeyMaterial() {
+    protected String getSpecialPrivateKey() {
         String newline = System.getProperty("line.separator");
         String km = getParameter("openssh-key-material");
         if(km == null) return null;
         return km.replaceAll("\\*", newline);
     }
 
-    protected String getServerPuttyKeyMaterial() {
+    protected String getSpecialPuttyPrivateKey() {
         String newline = System.getProperty("line.separator");
         String km = getParameter("putty-key-material");
         if(km == null) return null;
@@ -239,7 +239,7 @@ public class Application
         return f.exists();
     }
 
-    protected String getUserKeyMaterial()
+    protected String getUserPrivateKey()
     {
         try {
             if(hasUserKeyFile()) {
@@ -262,7 +262,7 @@ public class Application
         }
     }
 
-    protected String getUserPuttyKeyMaterial()
+    protected String getUserPuttyPrivateKey()
     {
         try {
             if(hasUserPuttyKeyFile()) {
