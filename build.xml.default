@@ -34,13 +34,14 @@
     <mkdir dir="${jar.dir}"/>
     <jar destfile="${jar.launssh}" basedir="${classes.dir}">
       <manifest>
+      	<attribute name="Application-Name" value="SSH Launcher"/>
         <attribute name="Trusted-Only" value="true"/>
         <attribute name="Permissions" value="all-permissions"/>
       </manifest>
     </jar>
   </target>
 
-  <target name="sign">
+  <target name="sign" depends="jar">
     <signjar jar="${jar.launssh}"
       keystore="${keystore.path}"
       storepass="${keystore.password}"
