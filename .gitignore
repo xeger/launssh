@@ -1,4 +1,7 @@
 .DS_Store
+.project
+.settings
+.classpath
 manifest.mf
 nbbuild.xml
 master-applet.jnlp
@@ -7,6 +10,6 @@ nbproject/*
 dist/*
 cert/*
 build/*
-integration/launssh.jar
+test/integration/*.jar
 codesign
 build.xml

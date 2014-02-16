@@ -1,7 +1,7 @@
 <project default="compile">
 
   <!-- modify these to your liking -->
-  <property name="keystore.path" value="some/keystore" />
+  <property name="keystore.path" value="${user.home}/.keystore" />
   <property name="keystore.password" value="mypa$$w0RD123" />
   <property name="key.alias" value="somekeyalias" />
   <property name="key.password" value="myOtherP@ssw0rd" />
@@ -14,6 +14,8 @@
   <property name="jar.launssh" value="${jar.dir}/launssh.jar"/>
   <property name="resources.dir" value="resources"/>
 
+  <property name="classpath" value="lib/javaws.jar"/>
+
   <target name="clean">
     <delete dir="${build.dir}"/>
   </target>
@@ -24,21 +26,22 @@
     <copy todir="${classes.dir}">
       <fileset dir="${resources.dir}"/>
     </copy>
-    <javac srcdir="${src.dir}" destdir="${classes.dir}" target="1.5"/>
+    <javac srcdir="${src.dir}" destdir="${classes.dir}" source="1.6" target="1.6" classpath="${classpath}"/>
   </target>
 
-  <target name="jar">
+  <target name="jar" depends="compile">
     <mkdir dir="${build.dir}"/>
     <mkdir dir="${jar.dir}"/>
     <jar destfile="${jar.launssh}" basedir="${classes.dir}">
       <manifest>
+      	<attribute name="Application-Name" value="SSH Launcher"/>
         <attribute name="Trusted-Only" value="true"/>
         <attribute name="Permissions" value="all-permissions"/>
       </manifest>
     </jar>
   </target>
 
-  <target name="sign">
+  <target name="sign" depends="jar">
     <signjar jar="${jar.launssh}"
       keystore="${keystore.path}"
       storepass="${keystore.password}"

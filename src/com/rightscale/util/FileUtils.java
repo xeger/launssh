@@ -24,15 +24,20 @@ public class FileUtils {
         StringBuffer contents = new StringBuffer();
         String       line     = null;
 
-        do {
-            line = br.readLine();
-            if(line != null) {
-                contents.append(line);
-                contents.append(newline);
-            }
-        } while(line != null);
-
-        return contents.toString();
+        try {
+	        do {
+	            line = br.readLine();
+	            if(line != null) {
+	                contents.append(line);
+	                contents.append(newline);
+	            }
+	        } while(line != null);
+	
+	        return contents.toString();
+        }
+        finally {
+        	br.close();
+        }
     }
 
     public static void writeText(String contents, File location)
@@ -44,7 +49,7 @@ public class FileUtils {
         bw.close();
     }
 
-    public static void writeResource(Class klass, String resName, File location)
+    public static void writeResource(Class<?> klass, String resName, File location)
             throws IOException
     {
         FileOutputStream fos = new FileOutputStream(location);
@@ -52,6 +57,7 @@ public class FileUtils {
 
         InputStream in = klass.getResourceAsStream(resName);
         if(in == null) {
+        	bw.close();
             throw new IOException("Could not getResourceAsStream(\"" + resName + "\")");
         }
         BufferedReader br = new BufferedReader(new InputStreamReader(in));
@@ -78,7 +84,7 @@ public class FileUtils {
 }
 
 class FileDeleter implements Runnable {
-    public static Map _deleters = new HashMap();
+    public static Map<String, FileDeleter> _deleters = new HashMap<String, FileDeleter>();
 
     Thread    _thread = null;
     File      _file   = null;
@@ -109,7 +115,7 @@ class FileDeleter implements Runnable {
 
     public void run() {
         try {
-            Thread.currentThread().sleep(_delay * 1000);
+            Thread.sleep(_delay * 1000);
         }
         catch (InterruptedException e) {}
 

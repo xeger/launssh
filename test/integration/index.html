@@ -1,0 +1,31 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+  <head>
+    <title></title>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+  </head>
+  <body>
+    <h1>LaunSSH Java Web Start Application</h1>
+    <a href="launssh.jnlp">launssh via Java Web Start</a>
+    <h1>LaunSSH Java Applet</h1>
+    <applet archive="launssh.jar"
+            code="com.rightscale.ssh.Applet"
+            width="100%"
+            height="100%"
+            mayscript
+            name="launssh"
+            id="launssh">
+       LaunSSH Java Applet.
+       <param name="username" value="tony">
+       <param name="server" value="ssh-host.example.com" />
+       <param name="server-uuid" value="launssh-integration-test">
+       <param name="auth-method" value="publickey" />
+       <param name="user-key-path" value=".ssh/id_rsa">
+<!--
+       <param name="auth-method" value="password">
+       <param name="password" value="foobariofoom">
+-->
+       <param name="troubleshooting-url" value="http://www.google.com" />
+    </applet>
+  </body>
+</html>

@@ -1,14 +1,11 @@
-package com.rightscale.ssh.launchers;
+package com.rightscale.ssh;
 
 import java.io.*;
+import com.rightscale.ssh.KeyFormat;
 
 public interface Launcher {
-    public static final int OPENSSH_KEY_FORMAT = 0;
-    public static final int PUTTY_KEY_FORMAT   = 1;
-    public static final int SSHCOM_KEY_FORMAT  = 2;
-
     public String  getFriendlyName();
-    public int     getRequiredKeyFormat();
+    public boolean supportsKeyFormat(KeyFormat format);
     public boolean canPasswordAuth();
     public boolean canPublicKeyAuth();
 
@@ -18,4 +15,3 @@ public interface Launcher {
     public void   run(String username, String hostname, String password)
             throws IOException, UnsupportedAuthMethod;
 }
-

@@ -39,7 +39,6 @@ public class Applescript extends OpenSshLauncher {
       if(exitCode != 0) {
         String scr  = _terminalScript.getCanonicalPath();
         p = getRuntime().exec( scr + " " + cmdline );
-
       }
     }
 

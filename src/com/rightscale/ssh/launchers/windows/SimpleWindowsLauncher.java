@@ -24,7 +24,7 @@ public abstract class SimpleWindowsLauncher extends SimpleLauncher {
         String[] comps = path.split(";|:");
 
         if(comps.length > 0) {
-            Vector fcomps = new Vector();
+            Vector<File> fcomps = new Vector<File>();
             for(int i = 0; i < comps.length; i++) {
                 String comp = comps[i];
                 fcomps.add(new File(comp));
@@ -38,7 +38,7 @@ public abstract class SimpleWindowsLauncher extends SimpleLauncher {
     }
 
     public static File findProgramFile(String dir, String basename) {
-        Vector paths = new Vector();
+        Vector<File> paths = new Vector<File>();
 
         if(System.getenv("ProgramFiles") != null) {
             paths.add( new File(System.getenv("ProgramFiles")) );
@@ -146,7 +146,7 @@ public abstract class SimpleWindowsLauncher extends SimpleLauncher {
         }
     }
 
-    private static File[] vectorToFileArray(Vector v) {
+    private static File[] vectorToFileArray(Vector<File> v) {
         File[] files = new File[v.size()];
 
         for(int i = 0; i < files.length; i++) {

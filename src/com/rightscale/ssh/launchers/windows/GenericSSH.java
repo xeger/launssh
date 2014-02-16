@@ -1,8 +1,6 @@
 package com.rightscale.ssh.launchers.windows;
 
 import com.rightscale.ssh.*;
-import com.rightscale.ssh.launchers.unix.*;
-import com.rightscale.ssh.launchers.*;
 import javax.swing.JOptionPane;
 import java.io.*;
 
@@ -23,8 +21,8 @@ public class GenericSSH extends SimpleWindowsLauncher {
         return true;
     }
 
-    public int getRequiredKeyFormat() {
-        return OPENSSH_KEY_FORMAT;
+    public boolean supportsKeyFormat(KeyFormat format) {
+        return (format == KeyFormat.OPEN_SSH);
     }
 
     public void run(String user, String host, File id) throws IOException {
