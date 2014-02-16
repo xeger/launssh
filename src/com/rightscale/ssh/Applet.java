@@ -94,21 +94,6 @@ public class Applet
     //// Properties and accessors.
     ////
 
-    protected boolean isAutorun() {
-        String v = getParameter("autorun");
-        if(v == null) {
-            return true;
-        }
-
-        v = v.toLowerCase();
-        if(v.startsWith("y") || v.startsWith("t") || v.startsWith("1")) {
-            return true;
-        }
-        else {
-            return false;
-        }
-    }
-
     protected boolean isAttemptNative() {
         String v = getParameter("native");
         if(v == null) {
@@ -156,12 +141,10 @@ public class Applet
     }
 
     protected String getAuthMethod() {
-        if("publickey".equals(getParameter("auth-method")))
-            return AUTH_METHOD_PUBLIC_KEY;
-        else if("password".equals(getParameter("auth-method")))
+        if("password".equals(getParameter("auth-method")))
             return AUTH_METHOD_PASSWORD;
         else
-            return null;
+            return AUTH_METHOD_PUBLIC_KEY;
     }
 
     protected String getSpecialPrivateKey() {
@@ -230,12 +213,12 @@ public class Applet
 
     protected boolean hasUserKeyFile() {
         File f = getUserKeyFile();
-        return f.exists();
+        return (f != null) && f.exists();
     }
 
     protected boolean hasUserPuttyKeyFile() {
         File f = getUserPuttyKeyFile();
-        return f.exists();
+        return (f != null) && f.exists();
     }
 
     protected String getUserPrivateKey()
@@ -298,6 +281,16 @@ public class Applet
     //// caller to have already elevated privilege.
     ////
 
+    private void openSession_()
+    {
+    	try {
+    		_ranNative = _launchpad.run();
+    	}
+    	catch(Exception e) {
+    		alert("Could not launch your computer's SSH client", e);
+    	}
+    }    
+
     private void init_()
     {
         _ranNative = _hadFailure = false;
@@ -331,7 +324,7 @@ public class Applet
             }
 
             if(privateKeys.isEmpty() && getUserKeyPath() == null) {
-                log("Unable to find a private key in the applet parameters.", null);
+                alert("Unable to find a private key in the applet parameters.");
             }
         }
 
@@ -360,44 +353,6 @@ public class Applet
 
     private void start_()
     {
-        try {
-            if( isAutorun() ) {
-                autorun_();
-            }
-            else {
-                choose_();
-            }
-        }
-        catch(IOException e) {
-            log("Encountered an error while invoking the SSH client.", e);
-        }
-    }
-
-    private boolean autorun_()
-            throws IOException
-    {
-        System.err.println("Attempting autorun...");
-
-        boolean didLaunch = false;
-
-        if( isAttemptNative() ) {
-            try {
-                setDisplayState(LAUNCHING);
-                _ranNative = didLaunch = _launchpad.run();
-            }
-            catch(IOException e) {
-                didLaunch = false;
-                log("Could not invoke your system's SSH client.", e);
-            }
-        }
-
-        return didLaunch;
-    }
-
-    private void choose_()
-            throws IOException
-    {
-
         if( getUserKeyPath() != null && !hasUserKeyFile() && !hasUserPuttyKeyFile() ) {
             //We can't find the user's local key file -- just give up!
             _hadFailure = true;
@@ -405,6 +360,9 @@ public class Applet
         }
         else if( !_launchpad.isNativeClientAvailable() ) {
             setDisplayState(NO_LAUNCHER);
+        }
+        else {
+        	openSession_();
         }
     }
 
@@ -432,13 +390,7 @@ public class Applet
 
     Action _actrun = new AbstractAction("Launch SSH") {
         public void actionPerformed(ActionEvent evt) {
-            try {
-                _ranNative = _launchpad.run();
-                setDisplayState(LAUNCHING);
-            }
-            catch(IOException e) {
-                log("Could not invoke your computer's SSH application.", e);
-            }
+        	openSession_();
         }
     };
 
@@ -495,7 +447,7 @@ public class Applet
         JPanel pnl = createPanel();
         Box pnlCenter = Box.createVerticalBox();
 
-        JLabel lbl = new JLabel("Cannot find a supported SSH client");
+        JLabel lbl = new JLabel("No supported SSH client is available.");
         lbl.setAlignmentX(JComponent.CENTER_ALIGNMENT);
         lbl.setForeground(Color.RED);
         pnlCenter.add(lbl);
@@ -547,7 +499,7 @@ public class Applet
         JPanel pnl = createPanel();
         Box pnlCenter = Box.createVerticalBox();
 
-        JLabel lbl = new JLabel("Cannot locate the private key file");
+        JLabel lbl = new JLabel("Missing private key file/material");
         lbl.setAlignmentX(JComponent.CENTER_ALIGNMENT);
         pnlCenter.add(lbl);
 

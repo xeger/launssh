@@ -283,11 +283,14 @@ public class Launchpad
 		_requiredKeys.add(Launcher.OPENSSH_KEY_FORMAT);
 	}
 
+	// Validate a parameter against a whitelist of known-good characters and raise an exception if it's suspicious.
 	private void validate(String str) {
-		Pattern p = Pattern.compile("[^A-Za-z0-9\\_\\-\\.]");
-		Matcher m = p.matcher(str);
-		if(m.matches()) {
-			throw new SecurityException("Input contains unsafe characters: " + str);
+		if(str != null) {
+			Pattern p = Pattern.compile("[^A-Za-z0-9\\_\\-\\.]");
+			Matcher m = p.matcher(str);
+			if(m.matches()) {
+				throw new SecurityException("Input contains unsafe characters: " + str);
+			}
 		}
 	}
 }
