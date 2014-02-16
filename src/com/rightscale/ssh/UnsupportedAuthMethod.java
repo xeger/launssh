@@ -1,4 +1,4 @@
-package com.rightscale.ssh.launchers;
+package com.rightscale.ssh;
 
 @SuppressWarnings("serial")
 public class UnsupportedAuthMethod extends Exception

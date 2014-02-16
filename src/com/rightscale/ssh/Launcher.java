@@ -1,4 +1,4 @@
-package com.rightscale.ssh.launchers;
+package com.rightscale.ssh;
 
 import java.io.*;
 import com.rightscale.ssh.KeyFormat;

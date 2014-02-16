@@ -1,6 +1,5 @@
 package com.rightscale.ssh;
 
-import com.rightscale.ssh.launchers.Launcher;
 import com.rightscale.ssh.launchers.*;
 
 import java.lang.reflect.*;
