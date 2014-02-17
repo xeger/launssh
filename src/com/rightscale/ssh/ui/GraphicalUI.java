@@ -34,6 +34,7 @@ public class GraphicalUI extends JPanel implements com.rightscale.ssh.UI {
 
 	boolean     _initialized = false;
 	SessionInfo _session     = null;
+	Container   _parent      = null;
 	JPanel      _pnlMain     = null;
 
 	@SuppressWarnings("serial")
@@ -84,6 +85,7 @@ public class GraphicalUI extends JPanel implements com.rightscale.ssh.UI {
 
 	public GraphicalUI(SessionInfo session, Container parentContainer) {
 		_session = session;
+		_parent = parentContainer;
 		
 		// Make sure our UI updates when the session's properties change
 		_session.addPropertyChangeListener(_sessionListener);
@@ -107,7 +109,7 @@ public class GraphicalUI extends JPanel implements com.rightscale.ssh.UI {
 		add(_pnlMain, BorderLayout.CENTER);
 		
 		// All done!
-		parentContainer.add(this);
+		_parent.add(this, BorderLayout.CENTER);
 	}
 	
 	public void setDisplayState(String newState) {
@@ -237,13 +239,13 @@ public class GraphicalUI extends JPanel implements com.rightscale.ssh.UI {
 
 	public void alert(String message) {
 		log(message);
-		JOptionPane.showMessageDialog(null, message, "SSH Launcher",
+		JOptionPane.showMessageDialog(_parent, message, "SSH Launcher",
 				JOptionPane.INFORMATION_MESSAGE);
 	}
 
 	public void alert(String message, Throwable problem) {
 		log(message, problem);
-		JOptionPane.showMessageDialog(null, String.format("%s\n(%s: %s)",
+		JOptionPane.showMessageDialog(_parent, String.format("%s\n(%s: %s)",
 				message, problem.getClass().getName(), problem.getMessage()),
 				"Error", JOptionPane.ERROR_MESSAGE);
 	}	

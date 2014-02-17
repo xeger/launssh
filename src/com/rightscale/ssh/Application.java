@@ -1,7 +1,12 @@
 package com.rightscale.ssh;
 
+import java.awt.BorderLayout;
 import java.awt.Container;
+import java.awt.Dimension;
+import java.awt.GridLayout;
+import java.awt.Toolkit;
 import java.beans.PropertyChangeListener;
+import java.beans.PropertyChangeSupport;
 import java.io.*;
 import java.net.*;
 import javax.swing.*;
@@ -16,30 +21,18 @@ public class Application implements SessionInfo
     public static final String AUTH_METHOD_PASSWORD   = "password";
 
 	public static void main(String args[]) {
-        Application app = new Application(args);
-
-        try {
-            boolean result = app.run();
-            System.exit(result ? 0 : -1);
-        }
-        catch(IllegalArgumentException e) {
-            app.alert("Cannot launch SSH: " + e.getMessage());
-            System.exit(-2);            
-        }
-        catch(Exception e) {
-            app.alert("Cannot launch SSH", e);
-            System.exit(-3);
-        }
+        System.exit(new Application(args).run());
 	}
 
     private Map<String, String>  _parameters  = new HashMap<String, String>();
     
-    private JFrame               _frame       = new JFrame("SSH Launcher");
-    private GraphicalUI          _ui          = new GraphicalUI(this, _frame);
-    private Launchpad            _launchpad   = new Launchpad(_ui);
+	private PropertyChangeSupport _thisBean   = new PropertyChangeSupport(this);	
+    private JFrame                _frame       = new JFrame("SSH Launcher");
+    private GraphicalUI           _ui          = null;
+    private Launchpad             _launchpad   = null;
 
     Application(String[] args) {
-        for(String s : args) {
+    	for(String s : args) {
             String[] pair = s.split("=");
 
             if(pair.length == 2) {
@@ -49,70 +42,100 @@ public class Application implements SessionInfo
                throw new IllegalArgumentException("Malformed command-line argument; expecting 'k=v'");
             }
         }
+
+    	_frame.setLayout(new BorderLayout());
+
+    	_ui = new GraphicalUI(this, _frame);
+    	_launchpad = new Launchpad(_ui);    	
     }
 
     /// Run the application.
-    public boolean run()
-        throws IOException
+    public int run()
     {
-    	_frame.show();
+    	_frame.setSize(400, 140);
+    	Dimension d = Toolkit.getDefaultToolkit().getScreenSize();
+        int left = (d.width - _frame.getWidth()) / 2;
+        int top = (d.height - _frame.getHeight()) / 2;
+        _frame.setLocation(left, top);
+        
+    	_frame.setVisible(true);
     	
         Map<KeyFormat, String> privateKeys = new HashMap<KeyFormat, String>();
 
-        if( getAuthMethod().equals(AUTH_METHOD_PUBLIC_KEY) ) {
-            if( getUserKeyPath() != null && hasUserKeyFile() ) {
-                privateKeys.put( KeyFormat.OPEN_SSH, getUserPrivateKey() );
-                log("User OpenSSH private key loaded from local disk");
-            }
-            else if( getSpecialPrivateKey() != null ) {
-                privateKeys.put( KeyFormat.OPEN_SSH, getSpecialPrivateKey() );
-                log("Server-specific OpenSSH private key loaded from parameters");
-            }
-            else {
-                log("No OpenSSH private key loaded");
-            }
+        try {
+	        if( getAuthMethod().equals(AUTH_METHOD_PUBLIC_KEY) ) {
+	            if( getUserKeyPath() != null && hasUserKeyFile() ) {
+	                privateKeys.put( KeyFormat.OPEN_SSH, getUserPrivateKey() );
+	                _ui.log("User OpenSSH private key loaded from local disk");
+	            }
+	            else if( getSpecialPrivateKey() != null ) {
+	                privateKeys.put( KeyFormat.OPEN_SSH, getSpecialPrivateKey() );
+	                _ui.log("Server-specific OpenSSH private key loaded from parameters");
+	            }
+	            else {
+	                _ui.log("No OpenSSH private key loaded");
+	            }
+	
+	            if( getUserKeyPath() != null && hasUserPuttyKeyFile() ) {
+	                privateKeys.put( KeyFormat.PUTTY, getUserPuttyPrivateKey() );
+	                _ui.log("User PuTTY private key loaded from local disk");
+	            }
+	            if( getSpecialPuttyPrivateKey() != null ) {
+	                privateKeys.put( KeyFormat.PUTTY, getSpecialPuttyPrivateKey() );
+	                _ui.log("Server-specific PuTTY private key loaded from local disk");
+	            }
+	            else {
+	                _ui.log("No PuTTY private key loaded");
+	            }
+	
+	            if(privateKeys.isEmpty() && getUserKeyPath() == null) {
+	                throw new IllegalArgumentException("Unable to identify a private key; add openssh-key-material=, putty-key-material= or user-key-path=");
+	            }
+	        }
+	        else if( getAuthMethod().equals(AUTH_METHOD_PASSWORD)) {
+	            if(getPassword() != null && getPassword().length() > 0) {
+	                _launchpad.setPassword(getPassword());
+	            }
+	            else {
+	                    throw new IllegalArgumentException("Unable to determine password; add password=");
+	            }            
+	        }
+	
+	        String uuid = getServerUUID();
+	        if(uuid == null) {
+	            uuid = getServer();
+	        }
+	
+	        //Initialize the launchpad business logic
+	        _launchpad.setUsername(getUsername());
+	        _launchpad.setServer(getServer());
+	        _launchpad.setServerUUID(uuid);
+	        _launchpad.setPrivateKeys(privateKeys);
 
-            if( getUserKeyPath() != null && hasUserPuttyKeyFile() ) {
-                privateKeys.put( KeyFormat.PUTTY, getUserPuttyPrivateKey() );
-                log("User PuTTY private key loaded from local disk");
-            }
-            if( getSpecialPuttyPrivateKey() != null ) {
-                privateKeys.put( KeyFormat.PUTTY, getSpecialPuttyPrivateKey() );
-                log("Server-specific PuTTY private key loaded from local disk");
-            }
-            else {
-                log("No PuTTY private key loaded");
-            }
-
-            if(privateKeys.isEmpty() && getUserKeyPath() == null) {
-                throw new IllegalArgumentException("Unable to identify a private key; add openssh-key-material=, putty-key-material= or user-key-path=");
-            }
+			// Arbitrary choose the first available launcher, going through our own setter so
+			// we fire a property-change notification for the UI.
+			// @todo consult preferences, or ask the user if multiple choices exist
+			setLauncher(_launchpad.getLaunchers().get(0));
+	        
+	        if(_launchpad.isLauncherAvailable()) {
+	            return _launchpad.run() == true ? 0 : -1;
+	        }
+	        else {
+	            throw new IllegalArgumentException("No supported SSH client is available.");
+	        }
         }
-        else if( getAuthMethod().equals(AUTH_METHOD_PASSWORD)) {
-            if(getPassword() != null && getPassword().length() > 0) {
-                _launchpad.setPassword(getPassword());
-            }
-            else {
-                    throw new IllegalArgumentException("Unable to determine password; add password=");
-            }            
+        catch(IllegalArgumentException e) {
+            _ui.alert("Cannot launch SSH: " + e.getMessage());
+            return -2;            
         }
-
-        String uuid = getServerUUID();
-        if(uuid == null) {
-            uuid = getServer();
+        catch(Exception e) {
+            _ui.alert("Cannot launch SSH", e);
+            return -3;
         }
-
-        //Initialize the launchpad business logic
-        _launchpad.setUsername(getUsername());
-        _launchpad.setServer(getServer());
-        _launchpad.setServerUUID(uuid);
-        _launchpad.setPrivateKeys(privateKeys);
-
-        if(_launchpad.isLauncherAvailable()) {
-            return _launchpad.run();
-        }
-        else {
-            throw new IllegalArgumentException("No supported SSH client is available.");
+        finally {
+            while(_frame.isVisible()) {
+            	try { Thread.sleep(100); } catch(InterruptedException e) {}
+            }        	
         }
     }
 
@@ -225,6 +248,31 @@ public class Application implements SessionInfo
         return new File(canonPath.toString());
     }
 
+	public Launcher getLauncher() {
+		return _launchpad.getLauncher();
+	}
+
+	public void setLauncher(Launcher launcher) {
+		_thisBean.firePropertyChange("launcher", _launchpad.getLauncher(), launcher);
+		_launchpad.setLauncher(launcher);
+	}
+
+	public void launch() {
+		try {
+			_launchpad.run();
+		} catch (Exception e) {
+			_ui.alert("Cannot launch your computer's SSH client", e);
+		}
+	}
+
+	public void addPropertyChangeListener(PropertyChangeListener listener) {
+		_thisBean.addPropertyChangeListener(listener);
+	}
+
+	public void removePropertyChangeListener(PropertyChangeListener listener) {
+		_thisBean.removePropertyChangeListener(listener);
+	}
+	
     protected File getUserPuttyKeyFile() {
         File f = getUserKeyFile();
         String s = f.getPath();
@@ -308,56 +356,4 @@ public class Application implements SessionInfo
         	}
         }
     }
-
-    ////
-    //// Implementation of com.rightscale.ssh.UI
-    ////
-
-    public void log(String message) {
-        System.out.println(message);
-    }
-
-    public void log(String message, Throwable problem) {
-        System.err.println(String.format("%s - %s: %s", message, problem.getClass().getName(), problem.getMessage()));
-    }	
-
-    public void alert(String message) {
-        log(message);
-        JOptionPane.showMessageDialog(null, message, "SSH Launcher", JOptionPane.INFORMATION_MESSAGE);
-    }
-
-    public void alert(String message, Throwable problem) {
-        log(message, problem);
-        JOptionPane.showMessageDialog(null, String.format("%s\n(%s: %s)", message, problem.getClass().getName(), problem.getMessage()), "Error", JOptionPane.ERROR_MESSAGE);        
-    }
-
-	@Override
-	public Launcher getLauncher() {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	@Override
-	public void setLauncher(Launcher launcher) {
-		// TODO Auto-generated method stub
-		
-	}
-
-	@Override
-	public void launch() {
-		// TODO Auto-generated method stub
-		
-	}
-
-	@Override
-	public void addPropertyChangeListener(PropertyChangeListener listener) {
-		// TODO Auto-generated method stub
-		
-	}
-
-	@Override
-	public void removePropertyChangeListener(PropertyChangeListener listener) {
-		// TODO Auto-generated method stub
-		
-	}
 }
