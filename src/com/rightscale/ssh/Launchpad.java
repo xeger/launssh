@@ -33,7 +33,7 @@ public class Launchpad
 	private Map<KeyFormat, String> _privateKeys        = null;
 	private String                 _password           = null;
 	private ArrayList<Launcher>    _launchers          = new ArrayList<Launcher>();
-	private String                 _launcherStatus     = null;
+	private Launcher               _launcher           = null;
 	private Set<KeyFormat>         _keyFormats         = new HashSet<KeyFormat>();
 
 	////
@@ -126,19 +126,19 @@ public class Launchpad
 		return (_launchers.size() > 0);
 	}
 
-	public String getLauncherName() {
-		if(_launchers.size() > 0) {
-			return ((Launcher)_launchers.get(0)).getFriendlyName();
-		}
-		else {
-			return "none supported";
-		}
+	@SuppressWarnings("unchecked")
+	public List<Launcher> getLaunchers() {
+		return (List<Launcher>) _launchers.clone();
+	}
+	
+	public Launcher getLauncher() {
+		return _launcher;
 	}
 
-	public String getLauncherStatus() {
-		return _launcherStatus;
+	public void setLauncher(Launcher launcher) {
+		_launcher = launcher;
 	}
-
+	
 	public File getSpecialKeyFile(KeyFormat keyFormat) {
 		if(getServerUUID() == null) {
 			return null;
@@ -256,7 +256,6 @@ public class Launchpad
 
 		_launchers.clear();
 		_keyFormats.clear();
-		_launcherStatus = "Cannot yet determine launcher status";
 
 		for(int i = 0; i < LAUNCHERS.length; i++) {
 			String cn = LAUNCHERS[i];
@@ -265,30 +264,19 @@ public class Launchpad
 				Constructor<?> ctor = Class.forName(cn).getConstructor(paramTypes);
 				Launcher l = (Launcher) ctor.newInstance(params);
 
-				if(!hasKeyMaterial() && !l.canPasswordAuth()) {
-					_ui.log(cn + " is UNAVAILABLE (password-based auth unsupported).");
-					_launcherStatus = l.getFriendlyName() + " does not support noninteractive password authentication.";
-					continue;
-				}
-
-				if(!hasPassword() && !l.canPublicKeyAuth())
-				{
-					_ui.log(cn + " is UNAVAILABLE (public-key auth unsupported).");
-					_launcherStatus = l.getFriendlyName() + " does not support public-key authentication.";
-					continue;
-				}
-
 				_ui.log(cn + " is COMPATIBLE.");
-				_launchers.add(l);
+
 				if(l.canPublicKeyAuth()) {
-					if(l.supportsKeyFormat(KeyFormat.OPEN_SSH)) {
-						_keyFormats.add(KeyFormat.OPEN_SSH);						
-					}
-					if(l.supportsKeyFormat(KeyFormat.PUTTY)) {
-						_keyFormats.add(KeyFormat.PUTTY);						
+					for(KeyFormat f : KeyFormat.values()) {
+						if(l.supportsKeyFormat(f)) {
+							_keyFormats.add(f);
+						}
 					}
 				}
-			}
+				
+				_launchers.add(l);
+
+			}			
 			catch(InvocationTargetException e) {
 				_ui.log(cn + " is INCOMPATIBLE (threw exception during initialization)", e.getCause());                
 			}

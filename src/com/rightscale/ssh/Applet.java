@@ -1,27 +1,28 @@
 package com.rightscale.ssh;
 
 import com.rightscale.ssh.launchers.*;
+import com.rightscale.ssh.ui.GraphicalUI;
 
 import java.awt.*;
 import java.awt.event.*;
+import java.beans.PropertyChangeListener;
+import java.beans.PropertyChangeSupport;
+
 import javax.swing.*;
 import java.net.*;
 import java.io.*;
 import java.util.*;
 import java.security.*;
 
-public class Applet extends java.applet.Applet implements
-		java.applet.AppletStub, com.rightscale.ssh.UI {
+public class Applet extends java.applet.Applet implements SessionInfo {
 	private static final long serialVersionUID = -7047031265889225736L;
 
 	public static final String AUTH_METHOD_PUBLIC_KEY = "publickey";
 	public static final String AUTH_METHOD_PASSWORD = "password";
 
-	public static final String NO_LAUNCHER = "choosing";
-	public static final String LAUNCHING = "launching";
-	public static final String MISSING_KEY = "missingKey";
-
-	private Launchpad _launchpad = new Launchpad(this);
+	private PropertyChangeSupport _thisBean = new PropertyChangeSupport(this);	
+	private GraphicalUI _ui = null;
+	private Launchpad _launchpad = null;
 	private boolean _launched = false;
 	private boolean _hadFailure = false;
 
@@ -43,15 +44,7 @@ public class Applet extends java.applet.Applet implements
 	}
 
 	// //
-	// // AppletStub implementation
-	// //
-
-	public void appletResize(int width, int height) {
-		resize(width, height);
-	}
-
-	// //
-	// // Applet implementation
+	// // Applet overrides
 	// //
 
 	/**
@@ -68,7 +61,7 @@ public class Applet extends java.applet.Applet implements
 						}
 					});
 		} catch (PrivilegedActionException e) {
-			log("Failed to acquire the privilege necessary to initialize the applet.",
+			_ui.log("Failed to acquire the privilege necessary to initialize the applet.",
 					e);
 		}
 	}
@@ -86,7 +79,7 @@ public class Applet extends java.applet.Applet implements
 						}
 					});
 		} catch (PrivilegedActionException e) {
-			log("Failed to acquire the privilege necessary to initialize the applet.",
+			_ui.log("Failed to acquire the privilege necessary to initialize the applet.",
 					e);
 		}
 	}
@@ -95,19 +88,18 @@ public class Applet extends java.applet.Applet implements
 	}
 
 	// //
-	// // Properties and accessors.
+	// // SessionInfo implementation
 	// //
 
-	protected String getUsername() {
+	public String getUsername() {
 		String v = getParameter("username");
-
 		if (v != null)
 			return v;
 		else
 			return "root";
 	}
 
-	protected String getServer() {
+	public String getServer() {
 		String v = getParameter("server");
 
 		if (v != null)
@@ -116,11 +108,11 @@ public class Applet extends java.applet.Applet implements
 			return "localhost";
 	}
 
-	protected String getServerUUID() {
+	public String getServerUUID() {
 		return getParameter("server-uuid");
 	}
 
-	protected String getServerName() {
+	public String getServerName() {
 		String v = getParameter("server-name");
 
 		if (v != null)
@@ -129,14 +121,14 @@ public class Applet extends java.applet.Applet implements
 			return getServer();
 	}
 
-	protected String getAuthMethod() {
+	public String getAuthMethod() {
 		if ("password".equals(getParameter("auth-method")))
 			return AUTH_METHOD_PASSWORD;
 		else
 			return AUTH_METHOD_PUBLIC_KEY;
 	}
 
-	protected String getSpecialPrivateKey() {
+	public String getSpecialPrivateKey() {
 		String newline = System.getProperty("line.separator");
 		String km = getParameter("openssh-key-material");
 		if (km == null)
@@ -144,7 +136,7 @@ public class Applet extends java.applet.Applet implements
 		return km.replaceAll("\\*", newline);
 	}
 
-	protected String getSpecialPuttyPrivateKey() {
+	public String getSpecialPuttyPrivateKey() {
 		String newline = System.getProperty("line.separator");
 		String km = getParameter("putty-key-material");
 		if (km == null)
@@ -152,23 +144,23 @@ public class Applet extends java.applet.Applet implements
 		return km.replaceAll("\\*", newline);
 	}
 
-	protected String getPassword() {
+	public String getPassword() {
 		return getParameter("password");
 	}
 
-	protected String getUserKeyPath() {
+	public String getUserKeyPath() {
 		return getParameter("user-key-path");
 	}
-
-	protected File getServerKeyFile() {
-		return new File(_launchpad.getSafeDirectory(), getServerUUID());
+	
+	public URL getTroubleshootingLink() {
+		try {
+			return new URL(getParameter("troubleshooting-url"));
+		} catch (MalformedURLException e) {
+			return null;
+		}
 	}
 
-	protected File getServerPuttyKeyFile() {
-		return new File(_launchpad.getSafeDirectory(), getServerUUID() + ".ppk");
-	}
-
-	protected File getUserKeyFile() {
+	public File getUserKeyFile() {
 		String path = getUserKeyPath();
 		if (path == null)
 			return null;
@@ -187,6 +179,54 @@ public class Applet extends java.applet.Applet implements
 		}
 
 		return new File(canonPath.toString());
+	}
+
+	public Launcher getLauncher() {
+		if(_launchpad != null) {
+			return _launchpad.getLauncher();
+		}
+		else {
+			return null;
+		}
+	}
+
+	public void setLauncher(Launcher launcher) {
+		_thisBean.firePropertyChange("launcher", _launchpad.getLauncher(), launcher);
+		_launchpad.setLauncher(launcher);
+	}
+
+	public void launch() {
+		try {
+			AccessController
+					.doPrivileged(new PrivilegedExceptionAction<Object>() {
+						public Object run() throws IOException {
+							openSession_();
+							return null;
+						}
+					});
+		} catch (PrivilegedActionException e) {
+			_ui.alert("Failed to acquire the privilege necessary to launch SSH.", e);
+		}
+	}
+	
+	public void addPropertyChangeListener(PropertyChangeListener listener) {
+		_thisBean.addPropertyChangeListener(listener);		
+	}
+
+	public void removePropertyChangeListener(PropertyChangeListener listener) {
+		_thisBean.removePropertyChangeListener(listener);		
+	}
+	
+	// //
+	// // Internal properties and accessors.
+	// //
+	
+	protected File getServerKeyFile() {
+		return new File(_launchpad.getSafeDirectory(), getServerUUID());
+	}
+
+	protected File getServerPuttyKeyFile() {
+		return new File(_launchpad.getSafeDirectory(), getServerUUID() + ".ppk");
 	}
 
 	protected File getUserPuttyKeyFile() {
@@ -272,16 +312,8 @@ public class Applet extends java.applet.Applet implements
 		}
 	}
 
-	protected URL getTroubleshootingLink() {
-		try {
-			return new URL(getParameter("troubleshooting-url"));
-		} catch (MalformedURLException e) {
-			return null;
-		}
-	}
-
 	// //
-	// // "Internal" Applet implementation and related methods; all require the
+	// // "Internal" Applet-related methods; all require the
 	// // caller to have already elevated privilege.
 	// //
 
@@ -289,11 +321,14 @@ public class Applet extends java.applet.Applet implements
 		try {
 			_launched = _launchpad.run();
 		} catch (Exception e) {
-			alert("Could not launch your computer's SSH client", e);
+			_ui.alert("Could not launch your computer's SSH client", e);
 		}
 	}
 
 	private void init_() {
+		_ui = new GraphicalUI(this, this);
+		_launchpad = new Launchpad(_ui);
+		
 		_launched = _hadFailure = false;
 
 		Map<KeyFormat, String> privateKeys = new HashMap<KeyFormat, String>();
@@ -306,18 +341,18 @@ public class Applet extends java.applet.Applet implements
 				specialKey = getSpecialPrivateKey();
 			}
 			catch(Throwable e) {
-				alert("Cannot read OpenSSH key; maybe there's an applet permissions issue?", e);
+				_ui.alert("Cannot read OpenSSH key; maybe there's an applet permissions issue?", e);
 			}
 
 			if (specialKey != null) {
 				privateKeys.put(KeyFormat.OPEN_SSH, specialKey);
-				log("Added special private OpenSSH key to launcher");
+				_ui.log("Added special private OpenSSH key to launcher");
 			} else if (userKey != null) {
 				privateKeys.put(KeyFormat.OPEN_SSH, userKey);
-				log("Added user's private OpenSSH key to launcher; source: "
+				_ui.log("Added user's private OpenSSH key to launcher; source: "
 						+ getUserKeyPath());
 			} else {
-				log(String
+				_ui.log(String
 						.format("OpenSSH key not found (userKeyPath=%s, hasUserKeyFile=%s)",
 								getUserKeyPath() != null, hasUserKeyFile()));
 			}
@@ -327,24 +362,24 @@ public class Applet extends java.applet.Applet implements
 				specialKey = getSpecialPuttyPrivateKey();
 			}
 			catch(Throwable e) {
-				alert("Cannot read PuTTY key; maybe there's an applet permissions issue?", e);
+				_ui.alert("Cannot read PuTTY key; maybe there's an applet permissions issue?", e);
 			}
 			
 			if (specialKey != null) {
 				privateKeys.put(KeyFormat.PUTTY, specialKey);
-				log("Added special private PuTTY private key to launcher");
+				_ui.log("Added special private PuTTY private key to launcher");
 			} else if (userKey != null) {
 				privateKeys.put(KeyFormat.PUTTY, userKey);
-				log("Added user's private PuTTY key to launcher; source: "
+				_ui.log("Added user's private PuTTY key to launcher; source: "
 						+ getUserKeyPath());
 			} else {
-				log(String
+				_ui.log(String
 						.format("PuTTY key not found (userKeyPath=%s, hasUserKeyFile=%s)",
 								getUserKeyPath() != null, hasUserKeyFile()));
 			}
 
 			if (privateKeys.isEmpty()) {
-				alert("No private keys found; ensure that applet parameters contain user-key-path, openssh-key-material or putty-key-material");
+				_ui.alert("No private keys found; ensure that applet parameters contain user-key-path, openssh-key-material or putty-key-material");
 			}
 		}
 
@@ -357,21 +392,11 @@ public class Applet extends java.applet.Applet implements
 		_launchpad.setServer(getServer());
 		_launchpad.setServerUUID(getServerUUID());
 		_launchpad.setPrivateKeys(privateKeys);
-
-		if (_launchpad.isLauncherAvailable()) {
-			_actrun.putValue(Action.NAME,
-					"Launch " + _launchpad.getLauncherName());
-		} else {
-			//
-			_actrun.putValue(Action.NAME, "Launch SSH");
-		}
-
-		// Initialize the UI (only if we haven't already done it)
-		if (!_initialized) {
-			initUI();
-		}
-
-		_initialized = true;
+		
+		// Arbitrary choose the first available launcher, going through our own setter so
+		// we fire a property-change notification for the UI.
+		// @todo consult preferences, or ask the user if multiple choices exist
+		setLauncher(_launchpad.getLaunchers().get(0));
 	}
 
 	private void start_() {
@@ -379,210 +404,11 @@ public class Applet extends java.applet.Applet implements
 				&& !hasUserPuttyKeyFile()) {
 			// We can't find the user's local key file -- just give up!
 			_hadFailure = true;
-			setDisplayState(MISSING_KEY);
+			_ui.setDisplayState(UI.MISSING_KEY);
 		} else if (!_launchpad.isLauncherAvailable()) {
-			setDisplayState(NO_LAUNCHER);
+			_ui.setDisplayState(UI.NO_LAUNCHER);
 		} else {
 			openSession_();
 		}
 	}
-
-	// //
-	// // UI fields and functions.
-	// //
-
-	boolean _initialized = false;
-	JPanel _pnlMain = null;
-
-	@SuppressWarnings("serial")
-	Action _actTroubleshoot = new AbstractAction("Troubleshoot") {
-		public void actionPerformed(ActionEvent evt) {
-			URL url = getTroubleshootingLink();
-
-			Desktop desktop = Desktop.isDesktopSupported() ? Desktop
-					.getDesktop() : null;
-			if (desktop != null && desktop.isSupported(Desktop.Action.BROWSE)) {
-				try {
-					desktop.browse(url.toURI());
-				} catch (Exception e) {
-					e.printStackTrace();
-				}
-			}
-		}
-	};
-
-	@SuppressWarnings("serial")
-	Action _actrun = new AbstractAction() {
-		public void actionPerformed(ActionEvent evt) {
-			openSession_();
-		}
-	};
-
-	private void setDisplayState(String newState) {
-		if (_initialized) {
-			CardLayout layout = (CardLayout) _pnlMain.getLayout();
-			layout.show(_pnlMain, newState);
-		}
-	}
-
-	private void initUI() {
-		// A header that is shared between all display states
-		Container header = createHeaderUI();
-
-		// One panel for each display state the applet can be in
-		Container pnlNoLauncher = createNoLauncherUI(), pnlMissingKey = createMissingKeyUI(), pnlLaunching = createLaunchingUI();
-
-		// Add all of the initialized panels to the main (CardLayout) panel
-		_pnlMain = createPanel();
-		_pnlMain.setLayout(new CardLayout());
-		_pnlMain.add(pnlLaunching, LAUNCHING);
-		_pnlMain.add(pnlMissingKey, MISSING_KEY);
-		_pnlMain.add(pnlNoLauncher, NO_LAUNCHER);
-
-		// Add the main and header panels to ourself
-		this.setLayout(new BorderLayout());
-		this.add(header, BorderLayout.NORTH);
-		this.add(_pnlMain, BorderLayout.CENTER);
-	}
-
-	private JPanel createPanel() {
-		JPanel pnl = new JPanel();
-		pnl.setBackground(Color.white);
-		return pnl;
-	}
-
-	private Container createHeaderUI() {
-		JPanel pnl = createPanel();
-		pnl.setLayout(new BoxLayout(pnl, BoxLayout.Y_AXIS));
-		JLabel lbl = new JLabel("Connecting to");
-		lbl.setAlignmentX(JComponent.CENTER_ALIGNMENT);
-		pnl.add(lbl);
-		lbl = new JLabel(getServerName());
-		lbl.setAlignmentX(JComponent.CENTER_ALIGNMENT);
-		pnl.add(lbl);
-		pnl.add(Box.createRigidArea(new Dimension(1, 16)));
-		return pnl;
-	}
-
-	private Container createNoLauncherUI() {
-		JPanel pnl = createPanel();
-		Box pnlCenter = Box.createVerticalBox();
-
-		JLabel lbl = new JLabel("No supported SSH client is available.");
-		lbl.setAlignmentX(JComponent.CENTER_ALIGNMENT);
-		lbl.setForeground(Color.RED);
-		pnlCenter.add(lbl);
-
-		if (SimpleLauncher.isPlatform("Windows")) {
-			lbl = new JLabel("Install PuTTY or OpenSSH");
-		} else if (SimpleLauncher.isPlatform("Mac")) {
-			lbl = new JLabel(
-					"Confirm that AppleScript, Terminal.app and /usr/bin/ssh are installed and functioning normally");
-		} else {
-			lbl = new JLabel(
-					"Install OpenSSH and a suppored terminal (gnome-terminal, konsole, xterm)");
-		}
-		lbl.setAlignmentX(JComponent.CENTER_ALIGNMENT);
-		pnlCenter.add(lbl);
-
-		pnlCenter.add(Box.createRigidArea(new Dimension(1, 16)));
-
-		if (getTroubleshootingLink() != null) {
-			pnlCenter.add(Box.createRigidArea(new Dimension(1, 16)));
-			Box pnlButtons = Box.createHorizontalBox();
-			pnlButtons.add(new JButton(_actTroubleshoot));
-			pnlCenter.add(pnlButtons);
-		}
-
-		pnl.setLayout(new BorderLayout());
-		pnl.add(pnlCenter, BorderLayout.CENTER);
-		return pnl;
-	}
-
-	private Container createLaunchingUI() {
-		JPanel pnl = createPanel();
-		Box pnlCenter = Box.createVerticalBox();
-		Box pnlButtons = Box.createHorizontalBox();
-		JLabel lbl = new JLabel(_launchpad.getLauncherName()
-				+ " will launch in a separate window.");
-		lbl.setAlignmentX(JComponent.CENTER_ALIGNMENT);
-		pnlCenter.add(lbl);
-		pnlCenter.add(Box.createRigidArea(new Dimension(1, 16)));
-		JButton btnrun = new JButton(_actrun);
-		pnlButtons.add(btnrun);
-		pnlCenter.add(pnlButtons);
-		pnl.setLayout(new BorderLayout());
-		pnl.add(pnlCenter, BorderLayout.CENTER);
-		return pnl;
-	}
-
-	private Container createMissingKeyUI() {
-		JPanel pnl = createPanel();
-		Box pnlCenter = Box.createVerticalBox();
-
-		JLabel lbl = new JLabel("Missing private key file/material");
-		lbl.setAlignmentX(JComponent.CENTER_ALIGNMENT);
-		pnlCenter.add(lbl);
-
-		String path = null;
-		try {
-			path = getUserKeyFile().getCanonicalPath();
-		} catch (IOException e) {
-			// If we can't even find the canonical path of the file...
-			path = getUserKeyPath();
-		} catch (NullPointerException e) {
-			// If no user key file was specified
-			path = "(unknown)";
-		}
-
-		lbl = new JLabel(path);
-		lbl.setAlignmentX(JComponent.CENTER_ALIGNMENT);
-		pnlCenter.add(lbl);
-
-		pnlCenter.add(Box.createRigidArea(new Dimension(1, 16)));
-
-		lbl = new JLabel(
-				"Please change your SSH settings or create the file mentioned above.");
-		lbl.setAlignmentX(JComponent.CENTER_ALIGNMENT);
-		lbl.setForeground(Color.RED);
-		pnlCenter.add(lbl);
-
-		if (getTroubleshootingLink() != null) {
-			pnlCenter.add(Box.createRigidArea(new Dimension(1, 16)));
-			Box pnlButtons = Box.createHorizontalBox();
-			pnlButtons.add(new JButton(_actTroubleshoot));
-			pnlCenter.add(pnlButtons);
-		}
-
-		pnl.setLayout(new BorderLayout());
-		pnl.add(pnlCenter, BorderLayout.CENTER);
-		return pnl;
-	}
-
-	// //
-	// // Implementation of com.rightscale.ssh.UI
-	// //
-
-	public void log(String message) {
-		System.out.println(message);
-	}
-
-	public void log(String message, Throwable problem) {
-		System.err.println(String.format("%s - %s: %s", message, problem
-				.getClass().getName(), problem.getMessage()));
-	}
-
-	public void alert(String message) {
-		log(message);
-		JOptionPane.showMessageDialog(null, message, "SSH Launcher",
-				JOptionPane.INFORMATION_MESSAGE);
-	}
-
-	public void alert(String message, Throwable problem) {
-		log(message, problem);
-		JOptionPane.showMessageDialog(null, String.format("%s\n(%s: %s)",
-				message, problem.getClass().getName(), problem.getMessage()),
-				"Error", JOptionPane.ERROR_MESSAGE);
-	}
-
 }

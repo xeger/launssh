@@ -1,12 +1,16 @@
 package com.rightscale.ssh;
 
+import java.awt.Container;
+import java.beans.PropertyChangeListener;
 import java.io.*;
 import java.net.*;
 import javax.swing.*;
+
+import com.rightscale.ssh.ui.GraphicalUI;
+
 import java.util.*;
 
-public class Application
-    implements com.rightscale.ssh.UI
+public class Application implements SessionInfo
 {
     public static final String AUTH_METHOD_PUBLIC_KEY = "publickey";
     public static final String AUTH_METHOD_PASSWORD   = "password";
@@ -29,7 +33,10 @@ public class Application
 	}
 
     private Map<String, String>  _parameters  = new HashMap<String, String>();
-    private Launchpad            _launchpad   = new Launchpad(this);
+    
+    private JFrame               _frame       = new JFrame("SSH Launcher");
+    private GraphicalUI          _ui          = new GraphicalUI(this, _frame);
+    private Launchpad            _launchpad   = new Launchpad(_ui);
 
     Application(String[] args) {
         for(String s : args) {
@@ -48,6 +55,8 @@ public class Application
     public boolean run()
         throws IOException
     {
+    	_frame.show();
+    	
         Map<KeyFormat, String> privateKeys = new HashMap<KeyFormat, String>();
 
         if( getAuthMethod().equals(AUTH_METHOD_PUBLIC_KEY) ) {
@@ -115,7 +124,7 @@ public class Application
         return _parameters.get(name);
     }
 
-    protected String getUsername() {
+    public String getUsername() {
         String v = getParameter("username");
 
         if(v != null)
@@ -124,7 +133,7 @@ public class Application
             return System.getProperty("user.name");
     }
 
-    protected String getServer() {
+    public String getServer() {
         String v = getParameter("server");
 
         if(v != null)
@@ -133,11 +142,11 @@ public class Application
             return "localhost";
     }
 
-    protected String getServerUUID() {
+    public String getServerUUID() {
         return getParameter("server-uuid");
     }
 
-    protected String getServerName() {
+    public String getServerName() {
         String v = getParameter("server-name");
 
         if(v != null)
@@ -146,7 +155,7 @@ public class Application
             return getServer();
     }
 
-    protected String getAuthMethod() {
+    public String getAuthMethod() {
         if("publickey".equals(getParameter("auth-method")))
             return AUTH_METHOD_PUBLIC_KEY;
         else if("password".equals(getParameter("auth-method")))
@@ -155,26 +164,35 @@ public class Application
             return AUTH_METHOD_PUBLIC_KEY;
     }
 
-    protected String getSpecialPrivateKey() {
+    public String getSpecialPrivateKey() {
         String newline = System.getProperty("line.separator");
         String km = getParameter("openssh-key-material");
         if(km == null) return null;
         return km.replaceAll("\\*", newline);
     }
 
-    protected String getSpecialPuttyPrivateKey() {
+    public String getSpecialPuttyPrivateKey() {
         String newline = System.getProperty("line.separator");
         String km = getParameter("putty-key-material");
         if(km == null) return null;
         return km.replaceAll("\\*", newline);
     }
 
-    protected String getPassword() {
+    public String getPassword() {
         return getParameter("password");
     }
 
-    protected String getUserKeyPath() {
+    public String getUserKeyPath() {
         return getParameter("user-key-path");
+    }
+
+    public URL getTroubleshootingLink() {
+        try {
+            return new URL( getParameter("troubleshooting-url") );
+        }
+        catch(MalformedURLException e) {
+            return null;
+        }
     }
 
     protected File getServerKeyFile() {
@@ -185,7 +203,7 @@ public class Application
         return new File(_launchpad.getSafeDirectory(), getServerUUID() + ".ppk");
     }
 
-    protected File getUserKeyFile() {
+    public File getUserKeyFile() {
         String path = getUserKeyPath();
         if(path == null)
             return null;
@@ -291,15 +309,6 @@ public class Application
         }
     }
 
-    protected URL getTroubleshootingLink() {
-        try {
-            return new URL( getParameter("troubleshooting-url") );
-        }
-        catch(MalformedURLException e) {
-            return null;
-        }
-    }
-
     ////
     //// Implementation of com.rightscale.ssh.UI
     ////
@@ -321,4 +330,34 @@ public class Application
         log(message, problem);
         JOptionPane.showMessageDialog(null, String.format("%s\n(%s: %s)", message, problem.getClass().getName(), problem.getMessage()), "Error", JOptionPane.ERROR_MESSAGE);        
     }
+
+	@Override
+	public Launcher getLauncher() {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public void setLauncher(Launcher launcher) {
+		// TODO Auto-generated method stub
+		
+	}
+
+	@Override
+	public void launch() {
+		// TODO Auto-generated method stub
+		
+	}
+
+	@Override
+	public void addPropertyChangeListener(PropertyChangeListener listener) {
+		// TODO Auto-generated method stub
+		
+	}
+
+	@Override
+	public void removePropertyChangeListener(PropertyChangeListener listener) {
+		// TODO Auto-generated method stub
+		
+	}
 }

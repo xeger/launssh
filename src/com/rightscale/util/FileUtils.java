@@ -58,7 +58,7 @@ public class FileUtils {
         InputStream in = klass.getResourceAsStream(resName);
         if(in == null) {
         	bw.close();
-            throw new IOException("Could not getResourceAsStream(\"" + resName + "\")");
+            throw new IOException(String.format("Could not Class<%s>getResourceAsStream(\"%s\")", klass.getName(), resName));
         }
         BufferedReader br = new BufferedReader(new InputStreamReader(in));
 

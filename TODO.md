@@ -2,12 +2,7 @@ TODO
 
 = Finish proof of concept
 
-fix launchpad "unavailable" logic: don't remove launcher from the list; leave it there, and add a status-reporting method
-so the applet/application can query to find out what's wrong 
-
-extract swing UI from applet; reuse in application
-
-remove all traces of non-native execution paths in launchpad, launchers
+Integrate Application with GraphicalUI
 
 = De-brand
 
