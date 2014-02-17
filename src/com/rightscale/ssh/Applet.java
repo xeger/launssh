@@ -1,14 +1,10 @@
 package com.rightscale.ssh;
 
-import com.rightscale.ssh.launchers.*;
 import com.rightscale.ssh.ui.GraphicalUI;
 
-import java.awt.*;
-import java.awt.event.*;
 import java.beans.PropertyChangeListener;
 import java.beans.PropertyChangeSupport;
 
-import javax.swing.*;
 import java.net.*;
 import java.io.*;
 import java.util.*;

@@ -23,11 +23,12 @@ import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 
 import com.rightscale.ssh.Launcher;
-import com.rightscale.ssh.Launchpad;
 import com.rightscale.ssh.SessionInfo;
 import com.rightscale.ssh.launchers.SimpleLauncher;
 
 public class GraphicalUI extends JPanel implements com.rightscale.ssh.UI {
+	private static final long serialVersionUID = -1348534272091360876L;
+
 	// //
 	// // UI fields and functions.
 	// //
@@ -78,10 +79,6 @@ public class GraphicalUI extends JPanel implements com.rightscale.ssh.UI {
 			}
 		}		
 	};
-
-	private void updateActionNames(Launcher launcher) {
-	}
-	
 
 	public GraphicalUI(SessionInfo session, Container parentContainer) {
 		_session = session;
