@@ -1,6 +1,5 @@
 package com.rightscale.ssh;
 
-import java.awt.BorderLayout;
 import java.awt.Dimension;
 import java.awt.Toolkit;
 import java.beans.PropertyChangeListener;
@@ -41,21 +40,25 @@ public class Application implements SessionInfo
             }
         }
 
-    	_frame.setLayout(new BorderLayout());
-
-    	_ui = new GraphicalUI(this, _frame);
+    	_ui = new GraphicalUI(this, _frame.getContentPane());
     	_launchpad = new Launchpad(_ui);    	
-    }
+
+    	// @todo extract this behavior into a DialogFrame class
+    	_frame.setContentPane(new com.rightscale.ssh.ui.CenteringPanel(_ui));
+}
 
     /// Run the application.
     public int run()
     {
-    	_frame.setSize(400, 140);
+    	// @todo extract this behavior into a DialogFrame class
+    	_frame.pack();
+    	_frame.setMinimumSize(_frame.getPreferredSize());
+    	_frame.setMaximumSize(_frame.getPreferredSize());
+    	_frame.setResizable(false);
     	Dimension d = Toolkit.getDefaultToolkit().getScreenSize();
         int left = (d.width - _frame.getWidth()) / 2;
         int top = (d.height - _frame.getHeight()) / 2;
-        _frame.setLocation(left, top);
-        
+        _frame.setLocation(left, top);        
     	_frame.setVisible(true);
     	
         Map<KeyFormat, String> privateKeys = new HashMap<KeyFormat, String>();

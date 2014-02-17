@@ -104,9 +104,6 @@ public class GraphicalUI extends JPanel implements com.rightscale.ssh.UI {
 		setLayout(new BorderLayout());
 		add(header, BorderLayout.NORTH);
 		add(_pnlMain, BorderLayout.CENTER);
-		
-		// All done!
-		_parent.add(this, BorderLayout.CENTER);
 	}
 	
 	public void setDisplayState(String newState) {

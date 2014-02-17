@@ -2,6 +2,7 @@ package com.rightscale.ssh;
 
 import com.rightscale.ssh.ui.GraphicalUI;
 
+import java.awt.BorderLayout;
 import java.beans.PropertyChangeListener;
 import java.beans.PropertyChangeSupport;
 
@@ -324,7 +325,10 @@ public class Applet extends java.applet.Applet implements SessionInfo {
 	private void init_() {
 		_ui = new GraphicalUI(this, this);
 		_launchpad = new Launchpad(_ui);
-		
+
+		setLayout(new BorderLayout());
+    	add(new com.rightscale.ssh.ui.CenteringPanel(_ui));
+
 		_launched = _hadFailure = false;
 
 		Map<KeyFormat, String> privateKeys = new HashMap<KeyFormat, String>();
