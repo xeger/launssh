@@ -12,7 +12,7 @@ import net.xeger.ssh.ui.*;
 
 import java.util.*;
 
-public class Application implements SessionInfo
+public class Application implements Session
 {
     public static final String AUTH_METHOD_PUBLIC_KEY = "publickey";
     public static final String AUTH_METHOD_PASSWORD   = "password";

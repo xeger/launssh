@@ -23,7 +23,7 @@ import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 
 import net.xeger.ssh.Launcher;
-import net.xeger.ssh.SessionInfo;
+import net.xeger.ssh.Session;
 import net.xeger.ssh.launchers.SimpleLauncher;
 
 public class GraphicalUI extends JPanel implements net.xeger.ssh.UI {
@@ -34,7 +34,7 @@ public class GraphicalUI extends JPanel implements net.xeger.ssh.UI {
 	// //
 
 	boolean     _initialized = false;
-	SessionInfo _session     = null;
+	Session _session     = null;
 	Container   _parent      = null;
 	JPanel      _pnlMain     = null;
 
@@ -80,7 +80,7 @@ public class GraphicalUI extends JPanel implements net.xeger.ssh.UI {
 		}		
 	};
 
-	public GraphicalUI(SessionInfo session, Container parentContainer) {
+	public GraphicalUI(Session session, Container parentContainer) {
 		_session = session;
 		_parent = parentContainer;
 		

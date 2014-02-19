@@ -11,7 +11,7 @@ import java.io.*;
 import java.util.*;
 import java.security.*;
 
-public class Applet extends java.applet.Applet implements SessionInfo {
+public class Applet extends java.applet.Applet implements Session {
 	private static final long serialVersionUID = -7047031265889225736L;
 
 	public static final String AUTH_METHOD_PUBLIC_KEY = "publickey";
