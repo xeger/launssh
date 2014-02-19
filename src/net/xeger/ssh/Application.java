@@ -21,7 +21,7 @@ public class Application implements Session
     private GraphicalUI           _ui          = new GraphicalUI(this, _frame);
     private Launchpad             _launchpad   = new Launchpad(_ui);
 
-    Application(String[] args) {
+    public Application(String[] args) {
     	for(String s : args) {
             String[] pair = s.split("=");
 
