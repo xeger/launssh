@@ -118,11 +118,11 @@ public class Applet extends java.applet.Applet implements Session {
 			return getServer();
 	}
 
-	public String getAuthMethod() {
+	public AuthMethod getAuthMethod() {
 		if ("password".equals(getParameter("auth-method")))
-			return AUTH_METHOD_PASSWORD;
+			return AuthMethod.PASSWORD;
 		else
-			return AUTH_METHOD_PUBLIC_KEY;
+			return AuthMethod.PUBLIC_KEY;
 	}
 
 	public String getSpecialPrivateKey() {

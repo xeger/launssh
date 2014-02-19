@@ -1,22 +1,15 @@
 package net.xeger.ssh;
 
-import java.awt.Dimension;
-import java.awt.Toolkit;
 import java.beans.PropertyChangeListener;
 import java.beans.PropertyChangeSupport;
 import java.io.*;
 import java.net.*;
-import javax.swing.*;
-
 import net.xeger.ssh.ui.*;
 
 import java.util.*;
 
 public class Application implements Session
 {
-    public static final String AUTH_METHOD_PUBLIC_KEY = "publickey";
-    public static final String AUTH_METHOD_PASSWORD   = "password";
-
 	public static void main(String args[]) {
         System.exit(new Application(args).run());
 	}
@@ -53,7 +46,7 @@ public class Application implements Session
         Map<KeyFormat, String> privateKeys = new HashMap<KeyFormat, String>();
 
         try {
-	        if( getAuthMethod().equals(AUTH_METHOD_PUBLIC_KEY) ) {
+	        if( getAuthMethod().equals(AuthMethod.PUBLIC_KEY) ) {
 	            if( getUserKeyPath() != null && hasUserKeyFile() ) {
 	                privateKeys.put( KeyFormat.OPEN_SSH, getUserPrivateKey() );
 	                _ui.log("User OpenSSH private key loaded from local disk");
@@ -82,7 +75,7 @@ public class Application implements Session
 	                throw new IllegalArgumentException("Unable to identify a private key; add openssh-key-material=, putty-key-material= or user-key-path=");
 	            }
 	        }
-	        else if( getAuthMethod().equals(AUTH_METHOD_PASSWORD)) {
+	        else if( getAuthMethod().equals(AuthMethod.PASSWORD)) {
 	            if(getPassword() != null && getPassword().length() > 0) {
 	                _launchpad.setPassword(getPassword());
 	            }
@@ -168,13 +161,11 @@ public class Application implements Session
             return getServer();
     }
 
-    public String getAuthMethod() {
-        if("publickey".equals(getParameter("auth-method")))
-            return AUTH_METHOD_PUBLIC_KEY;
-        else if("password".equals(getParameter("auth-method")))
-            return AUTH_METHOD_PASSWORD;
+    public AuthMethod getAuthMethod() {
+        if("password".equals(getParameter("auth-method")))
+            return AuthMethod.PASSWORD;
         else
-            return AUTH_METHOD_PUBLIC_KEY;
+            return AuthMethod.PUBLIC_KEY;
     }
 
     public String getSpecialPrivateKey() {
