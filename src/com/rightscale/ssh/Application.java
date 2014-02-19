@@ -8,7 +8,7 @@ import java.io.*;
 import java.net.*;
 import javax.swing.*;
 
-import com.rightscale.ssh.ui.GraphicalUI;
+import com.rightscale.ssh.ui.*;
 
 import java.util.*;
 
@@ -24,9 +24,9 @@ public class Application implements SessionInfo
     private Map<String, String>  _parameters  = new HashMap<String, String>();
     
 	private PropertyChangeSupport _thisBean   = new PropertyChangeSupport(this);	
-    private JFrame                _frame       = new JFrame("SSH Launcher");
-    private GraphicalUI           _ui          = null;
-    private Launchpad             _launchpad   = null;
+    private DialogFrame           _frame       = new DialogFrame("SSH Launcher");
+    private GraphicalUI           _ui          = new GraphicalUI(this, _frame);
+    private Launchpad             _launchpad   = new Launchpad(_ui);
 
     Application(String[] args) {
     	for(String s : args) {
@@ -40,25 +40,14 @@ public class Application implements SessionInfo
             }
         }
 
-    	_ui = new GraphicalUI(this, _frame.getContentPane());
-    	_launchpad = new Launchpad(_ui);    	
-
     	// @todo extract this behavior into a DialogFrame class
     	_frame.setContentPane(new com.rightscale.ssh.ui.CenteringPanel(_ui));
-}
+    }
 
     /// Run the application.
     public int run()
     {
     	// @todo extract this behavior into a DialogFrame class
-    	_frame.pack();
-    	_frame.setMinimumSize(_frame.getPreferredSize());
-    	_frame.setMaximumSize(_frame.getPreferredSize());
-    	_frame.setResizable(false);
-    	Dimension d = Toolkit.getDefaultToolkit().getScreenSize();
-        int left = (d.width - _frame.getWidth()) / 2;
-        int top = (d.height - _frame.getHeight()) / 2;
-        _frame.setLocation(left, top);        
     	_frame.setVisible(true);
     	
         Map<KeyFormat, String> privateKeys = new HashMap<KeyFormat, String>();
