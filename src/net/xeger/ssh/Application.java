@@ -3,26 +3,35 @@ package net.xeger.ssh;
 import java.beans.PropertyChangeListener;
 import java.beans.PropertyChangeSupport;
 import java.io.*;
+import java.lang.reflect.InvocationTargetException;
 import java.net.*;
 import net.xeger.ssh.ui.*;
 
 import java.util.*;
 
-public class Application implements Session
+import javax.swing.SwingUtilities;
+
+public class Application implements Runnable, Session
 {
-	public static void main(String args[]) {
-        System.exit(new Application(args).run());
+	public static void main(final String args[]) {
+		try {
+			SwingUtilities.invokeAndWait(new Application(args));
+		} catch (InvocationTargetException | InterruptedException e) {
+			e.printStackTrace();
+			System.exit(-1);
+		}
 	}
 
-    private Map<String, String>  _parameters  = new HashMap<String, String>();
+    private Map<String, String>   _parameters  = new HashMap<String, String>();
     
-	private PropertyChangeSupport _thisBean   = new PropertyChangeSupport(this);	
+    private PropertyChangeSupport _thisBean    = new PropertyChangeSupport(this);	
     private DialogFrame           _frame       = new DialogFrame("SSH Launcher");
     private GraphicalUI           _ui          = new GraphicalUI(this, _frame);
     private Launchpad             _launchpad   = new Launchpad(_ui);
 
 
-    public Application(String[] args) {
+    public Application(String[] args)
+    {
     	for(int i = 0; i < args.length; i++) {
     		String s = args[i];
     		int breakAt = s.indexOf('=');
@@ -37,17 +46,15 @@ public class Application implements Session
     		}
         }
 
-    	// @todo extract this behavior into a DialogFrame class
     	_frame.setContentPane(new net.xeger.ssh.ui.CenteringPanel(_ui));
     }
 
     /// Run the application.
-    public int run()
-    {
-    	// @todo extract this behavior into a DialogFrame class
-    	_frame.setVisible(true);
-    	
-        Map<KeyFormat, String> privateKeys = new HashMap<KeyFormat, String>();
+    public void run()
+    {    	
+    	_frame.setVisible(true);    	
+
+    	Map<KeyFormat, String> privateKeys = new HashMap<KeyFormat, String>();
 
         try {
 	        if( getAuthMethod().equals(AuthMethod.PUBLIC_KEY) ) {
@@ -105,7 +112,7 @@ public class Application implements Session
 			setLauncher(_launchpad.getLaunchers().get(0));
 	        
 	        if(_launchpad.isLauncherAvailable()) {
-	            return _launchpad.run() == true ? 0 : -1;
+	            _launchpad.run();
 	        }
 	        else {
 	            throw new IllegalArgumentException("No supported SSH client is available.");
@@ -113,16 +120,9 @@ public class Application implements Session
         }
         catch(IllegalArgumentException e) {
             _ui.alert("Cannot launch SSH: " + e.getMessage());
-            return -2;            
         }
         catch(Exception e) {
             _ui.alert("Cannot launch SSH", e);
-            return -3;
-        }
-        finally {
-            while(_frame.isVisible()) {
-            	try { Thread.sleep(100); } catch(InterruptedException e) {}
-            }        	
         }
     }
 
