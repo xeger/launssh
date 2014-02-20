@@ -21,16 +21,20 @@ public class Application implements Session
     private GraphicalUI           _ui          = new GraphicalUI(this, _frame);
     private Launchpad             _launchpad   = new Launchpad(_ui);
 
-    public Application(String[] args) {
-    	for(String s : args) {
-            String[] pair = s.split("=");
 
-            if(pair.length == 2) {
-               _parameters.put(pair[0], pair[1]);
-            }
-            else {
-               throw new IllegalArgumentException("Malformed command-line argument; expecting 'k=v'");
-            }
+    public Application(String[] args) {
+    	for(int i = 0; i < args.length; i++) {
+    		String s = args[i];
+    		int breakAt = s.indexOf('=');
+    		if(breakAt >= 0) {
+    			String name = s.substring(0, breakAt);
+    			String value = s.substring(breakAt+1);
+    			_parameters.put(name, value);
+    		}
+    		else {
+    			String excerpt = s.substring(0, s.length() > 16 ? 16 : s.length());
+                throw new IllegalArgumentException(String.format("Malformed command-line argument at position %d; expecting 'k=v', got '%s...'", i, excerpt));    			    		
+    		}
         }
 
     	// @todo extract this behavior into a DialogFrame class
