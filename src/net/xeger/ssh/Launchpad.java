@@ -42,6 +42,7 @@ public class Launchpad
 
 	public Launchpad(UI ui) {
 		_ui = ui;
+		initializeLaunchers();
 	}
 
 	public File getSafeDirectory() {
@@ -66,7 +67,6 @@ public class Launchpad
 
 	public void setPrivateKeys(Map<KeyFormat, String> privateKeys) {
 		_privateKeys = privateKeys;
-		initializeLaunchers();
 	}
 
 	public boolean hasKeyMaterial() {
@@ -189,8 +189,6 @@ public class Launchpad
 	public boolean run()
 			throws IOException
 	{
-		initializeLaunchers();
-
 		try {
 			writePrivateKeys();
 		}
