@@ -47,7 +47,7 @@ public class Launchpad
 
 	public File getSafeDirectory() {
 		String dir = System.getProperty("user.home");
-		dir = dir + "/.rightscale";
+		dir = dir + "/.launssh";
 		return new File(dir);
 	}
 
@@ -193,7 +193,7 @@ public class Launchpad
 			writePrivateKeys();
 		}
 		catch(IOException e) {
-			_ui.log("Could not write your private key file.", e);
+			_ui.alert("Could not write your private key file.", e);
 			return false;
 		}
 
@@ -202,7 +202,7 @@ public class Launchpad
 		while( it.hasNext() ) {
 			Launcher l = (Launcher)it.next();
 
-			_ui.log("  Running " + l.getClass().getName());
+			_ui.log("Running " + l.getClass().getName());
 
 			try {
 				// Attempt public-key auth first
