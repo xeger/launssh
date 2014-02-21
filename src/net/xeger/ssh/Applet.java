@@ -10,8 +10,9 @@ import java.net.*;
 import java.io.*;
 import java.util.*;
 import java.security.*;
+import javax.swing.*;
 
-public class Applet extends java.applet.Applet implements Session {
+public class Applet extends JApplet implements Session {
 	private static final long serialVersionUID = -7047031265889225736L;
 
 	private PropertyChangeSupport _thisBean = new PropertyChangeSupport(this);	
