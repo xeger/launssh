@@ -14,9 +14,6 @@ import java.security.*;
 public class Applet extends java.applet.Applet implements Session {
 	private static final long serialVersionUID = -7047031265889225736L;
 
-	public static final String AUTH_METHOD_PUBLIC_KEY = "publickey";
-	public static final String AUTH_METHOD_PASSWORD = "password";
-
 	private PropertyChangeSupport _thisBean = new PropertyChangeSupport(this);	
 	private GraphicalUI _ui = null;
 	private Launchpad _launchpad = null;
@@ -159,9 +156,11 @@ public class Applet extends java.applet.Applet implements Session {
 
 	public File getUserKeyFile() {
 		String path = getUserKeyPath();
-		if (path == null)
+		
+		if (path == null) {
 			return null;
-
+		}
+		
 		// Split the path into elements, accepting either \ or / as a separator
 		String[] elements = path.split("/|\\\\");
 
@@ -228,12 +227,18 @@ public class Applet extends java.applet.Applet implements Session {
 
 	protected File getUserPuttyKeyFile() {
 		File f = getUserKeyFile();
-		String s = f.getPath();
+		
+		if(f != null) {
+			String s = f.getPath();
 
-		if (s.endsWith(".ppk")) {
-			return f;
-		} else {
-			return new File(s + ".ppk");
+			if (s.endsWith(".ppk")) {
+				return f;
+			} else {
+				return new File(s + ".ppk");
+			}			
+		}
+		else {
+			return null;
 		}
 	}
 
@@ -333,7 +338,7 @@ public class Applet extends java.applet.Applet implements Session {
 
 		Map<KeyFormat, String> privateKeys = new HashMap<KeyFormat, String>();
 
-		if (getAuthMethod().equals(AUTH_METHOD_PUBLIC_KEY)) {
+		if (getAuthMethod().equals(AuthMethod.PUBLIC_KEY)) {
 			String userKey = null, specialKey = null;
 			
 			try {
@@ -357,6 +362,9 @@ public class Applet extends java.applet.Applet implements Session {
 								getUserKeyPath() != null, hasUserKeyFile()));
 			}
 
+			userKey = null;
+			specialKey = null;
+			
 			try {
 				userKey = getUserPuttyPrivateKey();
 				specialKey = getSpecialPuttyPrivateKey();

@@ -141,7 +141,7 @@ public class Launchpad
 	
 	public File getSpecialKeyFile(KeyFormat keyFormat) {
 		if(getServerUUID() == null) {
-			return null;
+			throw new IllegalArgumentException("Server UUID is required in order to use special key material");
 		}
 
 		switch(keyFormat) {
