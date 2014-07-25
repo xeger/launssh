@@ -16,7 +16,10 @@ public class Application implements Runnable, Session
 	public static void main(final String args[]) {
 		try {
 			SwingUtilities.invokeAndWait(new Application(args));
-		} catch (InvocationTargetException | InterruptedException e) {
+		} catch (InvocationTargetException e) {
+			e.printStackTrace();
+			System.exit(-1);
+		} catch(InterruptedException e) {
 			e.printStackTrace();
 			System.exit(-1);
 		}
