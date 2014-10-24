@@ -1,19 +1,49 @@
 #!/usr/bin/osascript
 
 on run argv
-	set AppleScript's text item delimiters to " "
-	set cmd to (argv as text)
+  try
+    set AppleScript's text item delimiters to " "
+    set cmd to (argv as text)
 
-	tell application "Terminal" to activate
+    tell application "Terminal" to activate
+    tell application "System Events" to set frontmost of process "Terminal" to true
 
-	tell application "Terminal"
-		tell application "System Events" to tell process "Terminal" to keystroke "t" using command down
+    set sshWindow to false
 
-		tell front window to tell selected tab to tell current settings
-			set clean commands to ["ssh", "login", "bash"]
-		end tell
+    tell application "Terminal"
+      # Find a window that already has an SSH session in the foreground tab by looking at processes
+      # and finding the substring "SSH". (Bit of a hack to coerce list of text to a string,
+      # but I can't find a way to iterate through its elements.)
+      repeat with aWindow in windows
+        repeat with aTab in (tabs of aWindow)
+          if ((processes of aTab) as string) contains "ssh" then
+            set sshWindow to aWindow
+            exit repeat
+          end if
+          if sshWindow ≠ false then exit repeat
+        end repeat
+        if sshWindow ≠ false then exit repeat
+      end repeat
 
-		do script with command "~/.rightscale/RightScale_SSH_Wrapper " & cmd & " ; logout" in front window
-	end tell
+      # If no SSH window was found, use the front window.
+      if sshWindow = false then
+        set sshWindow to front window
+      end if
 
+      tell sshWindow
+        set frontmost to true
+        tell application "System Events" to keystroke "t" using {command down}
+      end tell
+
+      tell front window to tell selected tab to tell current settings
+        set clean commands to ["ssh", "login", "bash"]
+      end tell
+
+      do script with command "~/.rightscale/RightScale_SSH_Wrapper " & cmd & " ; logout" in front window
+    end tell
+  on error errStr number errorNumber
+    display alert "SSH launch failed" ¬
+      message "AppleScript error " & errorNumber & "\n" & errStr ¬
+      as critical
+  end try
 end run

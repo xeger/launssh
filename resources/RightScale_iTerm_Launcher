@@ -1,19 +1,24 @@
 #!/usr/bin/osascript
 
 on run argv
-    set AppleScript's text item delimiters to " "
-    set cmd to (argv as text)
+	try
+		set AppleScript's text item delimiters to " "
+		set cmd to "ec2-54-161-36-243.compute-1.amazonaws.com"
+		
+		tell application "iTerm"
+			activate
 
-    tell application "iTerm"
-		activate
-
-		set term to (get current terminal)
-		tell term
-			set sess to (make new session)
-			tell sess
-				set name to "RightScale SSH"
-				exec command "~/.rightscale/RightScale_SSH_Wrapper " & cmd
+			set term to (get current terminal)
+			tell term
+				set sess to (make new session)
+				tell sess
+					exec command "~/.rightscale/RightScale_SSH_Wrapper " & cmd
+				end tell
 			end tell
 		end tell
-	end tell
+	on error errStr number errorNumber
+    display alert "SSH launch failed" ¬
+      message "AppleScript error " & errorNumber & "\n" & errStr ¬
+      as critical
+	end try
 end run
