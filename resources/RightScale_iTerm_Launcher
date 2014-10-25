@@ -3,16 +3,34 @@
 on run argv
 	try
 		set AppleScript's text item delimiters to " "
-		set cmd to "ec2-54-161-36-243.compute-1.amazonaws.com"
+		set cmd to (argv as text)
 		
+    set sshWindow to false
+
 		tell application "iTerm"
 			activate
 
-			set term to (get current terminal)
-			tell term
-				set sess to (make new session)
-				tell sess
-					exec command "~/.rightscale/RightScale_SSH_Wrapper " & cmd
+      # Find a window that already has an SSH session in the foreground tab by looking at session
+      # names and finding one with "ssh" in its title.
+      repeat with aTerminal in terminals
+        repeat with aSession in sessions of aTerminal
+          if (name of aSession as string) contains "ssh" then
+            set sshWindow to aTerminal
+            exit repeat
+          end if
+        end repeat
+        if sshWindow ≠ false then exit repeat
+      end repeat
+
+      # If no SSH window was found, use the front window.
+      if sshWindow = false then
+        set sshWindow to (get current terminal)
+      end if
+
+			tell sshWindow
+				set sshTab to (make new session)
+				tell sshTab
+				  exec command "ssh " & cmd
 				end tell
 			end tell
 		end tell

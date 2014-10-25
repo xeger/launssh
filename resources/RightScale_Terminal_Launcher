@@ -39,7 +39,7 @@ on run argv
         set clean commands to ["ssh", "login", "bash"]
       end tell
 
-      do script with command "~/.rightscale/RightScale_SSH_Wrapper " & cmd & " ; logout" in front window
+      do script with command "ssh " & cmd & " && exit" in front window
     end tell
   on error errStr number errorNumber
     display alert "SSH launch failed" ¬
