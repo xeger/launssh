@@ -47,7 +47,7 @@ public class Launchpad
 
 	public File getSafeDirectory() {
 		String dir = System.getProperty("user.home");
-		dir = dir + "/.launssh";
+		dir = dir + "/.rightscale";
 		return new File(dir);
 	}
 
