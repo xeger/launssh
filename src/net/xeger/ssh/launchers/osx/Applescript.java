@@ -47,24 +47,17 @@ public class Applescript extends OpenSshLauncher {
 
         File terminal = new File(dir, "RightScale_Terminal_Launcher");
         File iterm    = new File(dir, "RightScale_iTerm_Launcher");
-        File wrapper  = new File(dir, "RightScale_SSH_Wrapper");
-
 
         if(terminal.exists())
             terminal.delete();
         if(iterm.exists())
             iterm.delete();
-        if(wrapper.exists())
-            wrapper.delete();
-
 
         FileUtils.writeResource(getClass(), "/RightScale_Terminal_Launcher", terminal);
         FileUtils.writeResource(getClass(), "/RightScale_iTerm_Launcher", iterm);
-        FileUtils.writeResource(getClass(), "/RightScale_SSH_Wrapper", wrapper);
 
         getRuntime().exec("chmod 0700 " + terminal.getCanonicalPath());
         getRuntime().exec("chmod 0700 " + iterm.getCanonicalPath());
-        getRuntime().exec("chmod 0700 " + wrapper.getCanonicalPath());
 
 
         //HACK - sleep for a bit so the JVM picks up the files' change of perms
